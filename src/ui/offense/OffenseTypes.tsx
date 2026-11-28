@@ -27,7 +27,7 @@ import { SheetCoachLink } from '../CoachLink';
 import { countClass } from '../CardsLegend';
 import type { CSSProperties } from 'react';
 import { AreaHero, HeroCount } from '../AreaHero';
-import { SheetRow, FlipHead } from '../analysisRows';
+import { SheetRow } from '../analysisRows';
 
 /** Da qui il danno si scrive anche se non conta (3HKO, la soglia di Coverage meta), in una casella grigia. */
 const LOW_PCT = 34;
@@ -51,7 +51,6 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
   const lang = useLang();
   const { team } = ctx;
   const roomy = !!ctx.roomy;
-  const phone = useMediaQuery(FLIP_TABLES_QUERY);
   // Telefono e tablet: 18 tessere, una per tipo (la coverage del team e chi colpisce più forte); toccandone una il foglio coi 6 membri
   const tiles = useMediaQuery(FLIP_TABLES_QUERY);
   const [sheetType, setSheetType] = useState<(typeof TYPES)[number] | null>(null);
@@ -102,10 +101,10 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
   const holeNames = TYPES.filter(type => holes.includes(type)).map(type => typeName(type, lang));
 
   /** La testata di un tipo: in colonna sul computer, in riga sul telefono (tabella girata). */
-  const typeHead = (type: (typeof TYPES)[number], i: number, scope: 'col' | 'row') => {
+  const typeHead = (type: (typeof TYPES)[number], i: number) => {
     const hole = holes.includes(type);
     return (
-      <th key={type} scope={scope} className={colClass(i, `${hole ? 'sev-serious' : ''}${scope === 'row' ? ' ct-type-h' : ''}`)}
+      <th key={type} scope="col" className={colClass(i, hole ? 'sev-serious' : '')}
         onMouseEnter={e => { setHover({ row: -1, col: i }); tip.open({ slot: -1, type }, e.currentTarget); }} onMouseLeave={tip.close}
         {...focusAt(-1, i, { slot: -1, type })}>
         <TypeIcons types={[type]} />
@@ -232,34 +231,16 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
   }
 
   return (
-    <div className={`def-frame off-frame def-types${roomy ? ' roomy' : ''}${phone ? ' ct-flip' : ''}`}>
+    <div className={`def-frame off-frame def-types${roomy ? ' roomy' : ''}`}>
       <div className="ad-scroll">
         <p id={summaryId} hidden>{holeNames.length ? t('sr.types.offense', { list: holeNames.join(', ') }) : t('sr.types.offenseNone')}</p>
-        {phone ? (
-          // Telefono: la tabella girata, i 18 tipi in riga e i membri in colonna (icona in testata), così sta in larghezza
-          // senza scorrere di lato; in fondo a ogni riga il Team Coverage del tipo. "Il migliore" non c'è: è la casella più
-          // forte della riga.
-          <table ref={nav.ref} aria-label={`${t('area.strength')}: ${t('detail.coverageTypes')}`} aria-describedby={summaryId} className="def-grid spaced ct-table ct-flip-table"
-            onKeyDown={nav.onKeyDown} onFocus={nav.onFocus} onBlur={leaveGrid}>
-            <FlipHead corner={t('flip.type')} team={team} nameOf={(_, slot) => nameOf(slot)} bind={set => card.bind(set)} focusSlot={focus?.slot}
-              cellProps={slot => focusAt(slot, -1)} />
-            <tbody>
-              {TYPES.map((type, i) => (
-                <tr key={type}>
-                  {typeHead(type, i, 'row')}
-                  {team.map((_, slot) => hitCell(slot, type, i))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
         <table ref={nav.ref} aria-label={`${t('area.strength')}: ${t('detail.coverageTypes')}`} aria-describedby={summaryId} className="def-grid spaced ct-table"
           onMouseLeave={e => { setHover(null); tip.close(e); }} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus} onBlur={leaveGrid}>
           <colgroup><col className="def-col-mon" /></colgroup>
           <thead>
             <tr>
               <th scope="col" className="def-mon-h">{t('detail.member')}</th>
-              {TYPES.map((type, i) => typeHead(type, i, 'col'))}
+              {TYPES.map((type, i) => typeHead(type, i))}
             </tr>
           </thead>
           <tbody>
@@ -295,7 +276,6 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
             </tr>
           </tbody>
         </table>
-        )}
       </div>
       {card.tip}
       {headType && tip.anchor && (

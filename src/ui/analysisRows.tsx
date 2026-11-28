@@ -1,18 +1,6 @@
 import type { ReactNode } from 'react';
-import type { TeamSet } from '../engine/sets';
 import { PokemonIcon } from './PokemonName';
 import { useT } from '../i18n/react';
-
-/**
- * Telefono e tablet piccolo, le tabelle dell'Analisi "una sopra l'altra": una riga con l'etichetta corta a sinistra e la
- * barra (o il valore) larga quanto lo schermo, niente da scorrere di lato.
- */
-export const barRow = (label: string, cell: ReactNode, key: string, extra?: string) => (
-  <tr key={key} className={`og-bar-row${extra ? ` ${extra}` : ''}`}>
-    <th scope="row" className="og-bar-label">{label}</th>
-    <td colSpan={2}>{cell}</td>
-  </tr>
-);
 
 /**
  * Una riga della scheda dal basso di Coverage e Meta: l'icona e il nome del membro (sotto, piccolo, `sub`), poi i suoi
@@ -41,37 +29,6 @@ export function MoreCards({ left, step, onMore }: { left: number; step: number; 
     <button type="button" className="cm-cards-more" onClick={onMore}>
       {t('odetail.cards.more', { n: Math.min(step, left), left })}
     </button>
-  );
-}
-
-/**
- * La testata delle tabelle girate (telefono e tablet: tipi o minacce in riga, i membri in colonna): nell'angolo il nome
- * delle righe per i lettori di schermo, poi un'icona per membro (la sua carta passandoci sopra, `bind`). La colonna del
- * membro scelto (`focusSlot`) resta accesa; `cellProps` aggiunge alla casella i gestori della tabella (fuoco, passaggio).
- */
-export function FlipHead({ corner, team, nameOf, bind, focusSlot, cellProps }: {
-  corner: string;
-  team: TeamSet[];
-  nameOf: (set: TeamSet, i: number) => string;
-  bind: (set: TeamSet) => object;
-  focusSlot?: number | null;
-  cellProps?: (i: number) => object;
-}) {
-  return (
-    <thead>
-      <tr>
-        <th scope="col" className="def-mon-h"><span className="visually-hidden">{corner}</span></th>
-        {team.map((set, i) => {
-          const name = nameOf(set, i);
-          return (
-            <th key={`${name}-${i}`} scope="col" className={`ct-mon-h${focusSlot === i ? ' kf-col' : ''}`} {...cellProps?.(i)}>
-              <span className="ct-mon-box" {...bind(set)}><PokemonIcon name={name} /></span>
-              <span className="visually-hidden">{name}</span>
-            </th>
-          );
-        })}
-      </tr>
-    </thead>
   );
 }
 

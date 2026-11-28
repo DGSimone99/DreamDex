@@ -33,7 +33,7 @@ import { FocusNote } from '../offense/KoBadges';
 import { PokemonIcon } from '../PokemonName';
 import { FLIP_TABLES_QUERY, useMediaQuery } from '../useMediaQuery';
 import { AreaHero, HeroCount } from '../AreaHero';
-import { SheetRow, FlipHead } from '../analysisRows';
+import { SheetRow } from '../analysisRows';
 
 /** Colore della riga Copertura, come nell'Offesa: rosso a 0, giallo sotto il livello retto (HELD_LEVEL), verde da lì. */
 const levelTone = (level: number) => (level === 0 ? 'bad' : level < HELD_LEVEL ? 'warn' : 'good');
@@ -114,10 +114,10 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
   const weakNames = rows.filter(row => weak.includes(row.type)).map(row => typeName(row.type as TypeName, lang));
 
   /** La testata di un tipo: in colonna sul computer, in riga sullo schermo stretto (tabella girata). */
-  const typeHead = (row: (typeof rows)[number], i: number, scope: 'col' | 'row') => {
+  const typeHead = (row: (typeof rows)[number], i: number) => {
     const hole = weak.includes(row.type);
     return (
-      <th key={row.type} scope={scope} className={colClass(i, `${hole ? 'sev-serious' : ''}${scope === 'row' ? ' ct-type-h' : ''}`)}
+      <th key={row.type} scope="col" className={colClass(i, hole ? 'sev-serious' : '')}
         onMouseEnter={e => { setHover({ row: -1, col: i }); tip.open({ slot: -1, col: i }, e.currentTarget); }} onMouseLeave={tip.close}
         {...focusAt(-1, i, { slot: -1, col: i })}>
         <TypeIcons types={[row.type]} />
@@ -219,27 +219,9 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
   }
 
   return (
-    <div className={`def-frame def-types${roomy ? ' roomy' : ''}${narrow ? ' ct-flip' : ''}`}>
+    <div className={`def-frame def-types${roomy ? ' roomy' : ''}`}>
       <div className="ad-scroll">
         <p id={summaryId} hidden>{weakNames.length ? t('sr.types.defense', { list: weakNames.join(', ') }) : t('sr.types.defenseNone')}</p>
-        {narrow ? (
-          // Telefono e tablet piccolo: la tabella girata come nell'Offesa, i 18 tipi in riga e i membri in colonna, in fondo
-          // a ogni riga la Copertura del tipo; niente "Il migliore" (è la casella migliore della riga)
-          <table ref={nav.ref} aria-label={`${t('area.defense')}: ${t('detail.coverageTypes')}`} className="def-grid spaced ct-table ct-flip-table"
-            aria-describedby={!focus && notes.length ? `${summaryId} ${notesId}` : summaryId}
-            onKeyDown={nav.onKeyDown} onFocus={nav.onFocus} onBlur={leaveGrid}>
-            <FlipHead corner={t('flip.type')} team={team} nameOf={set => battleName(set)} bind={set => card.bind(set)} focusSlot={focus?.slot}
-              cellProps={member => focusAt(member, -1)} />
-            <tbody>
-              {rows.map((row, i) => (
-                <tr key={row.type}>
-                  {typeHead(row, i, 'row')}
-                  {team.map((_, member) => hitCell(member, row, i))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
         <table ref={nav.ref} aria-label={`${t('area.defense')}: ${t('detail.coverageTypes')}`} className="def-grid spaced ct-table"
           aria-describedby={!focus && notes.length ? `${summaryId} ${notesId}` : summaryId}
           onMouseLeave={e => { setHover(null); tip.close(e); }} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus} onBlur={leaveGrid}>
@@ -247,7 +229,7 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
           <thead>
             <tr>
               <th scope="col" className="def-mon-h">{t('detail.member')}</th>
-              {rows.map((row, i) => typeHead(row, i, 'col'))}
+              {rows.map((row, i) => typeHead(row, i))}
             </tr>
           </thead>
           <tbody>
@@ -281,7 +263,6 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
             </tr>
           </tbody>
         </table>
-        )}
       </div>
       {card.tip}
       {tip.anchor && openType && anchor!.slot < 0 && (

@@ -33,7 +33,7 @@ import { MemberMon } from './MemberMon';
 import { EffLegend, EffTag, effClass, effLabel, effWord, useColumnHover } from '../effTag';
 import { AreaHero, HeroCount } from '../AreaHero';
 import { PedanaCard } from '../PedanaCard';
-import { FlipHead, MetaHeadMon, MoreCards, SheetRow } from '../analysisRows';
+import { MetaHeadMon, MoreCards, SheetRow } from '../analysisRows';
 
 type Row = NonNullable<TeamDefense['coverageMeta']>['rows'][number];
 type Holder = Row['heldBy'][number];
@@ -163,30 +163,9 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
   const body = (shown: Row[], pager: ReactNode) => {
     const cells = shown.map(r => cellsOf(r, names));
     return (
-      <div className={`def-frame def-meta-grid cm-matrix${ctx.roomy ? ' roomy' : ''}${narrow ? ' ct-flip' : ''}`}>
+      <div className={`def-frame def-meta-grid cm-matrix${ctx.roomy ? ' roomy' : ''}`}>
         <div className="ad-scroll">
           <p id={summaryId} hidden>{open.length ? t('sr.cm.defense', { list: open.join(', ') }) : t('sr.cm.defenseNone')}</p>
-          {narrow ? (
-            // Telefono e tablet piccolo: la tabella girata come nell'Offesa, le minacce in riga e i membri in colonna, le
-            // pagine sopra, in fondo a ogni riga quanti membri la reggono; nelle caselle il danno o il timbro KO
-            <>
-              <div className="cm-flip-pager">{pager}</div>
-              <table ref={nav.ref} aria-label={`${t('area.defense')}: ${t('detail.coverageMeta')}`} aria-describedby={summaryId} className="def-grid spaced ct-table ct-flip-table"
-                onKeyDown={nav.onKeyDown} onFocus={nav.onFocus} onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) hover.clear(); }}>
-                <FlipHead corner={t('flip.target')} team={ctx.team} nameOf={set => battleName(set)} bind={set => card.bind(set)} focusSlot={focus?.slot} />
-                <tbody>
-                  {shown.map((r, k) => (
-                    <tr key={r.species}>
-                      <th scope="row" aria-label={r.species} className={hover.cls(k, 'dm-h ct-type-h')} {...hover.enter(k)}>
-                        <MetaHeadMon species={r.species} bind={card.bind(r.set)} tone={countTone(held(r))} />
-                      </th>
-                      {ctx.team.map((_, m) => cell(r, cells[k][m], m, k))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </>
-          ) : (
           <table ref={nav.ref} aria-label={`${t('area.defense')}: ${t('detail.coverageMeta')}`} aria-describedby={summaryId} className="def-grid spaced ct-table"
             onMouseLeave={e => { hover.table.onMouseLeave(); tip.close(e); }} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus} onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) hover.clear(); }}>
             <colgroup>
@@ -230,7 +209,6 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
               </tr>
             </tfoot>
           </table>
-          )}
         </div>
         {tipCell(shown)}
         {card.tip}

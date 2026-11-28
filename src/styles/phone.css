@@ -35,8 +35,7 @@
   .rail-format { flex: 1; min-width: 0; height: 40px; overflow: hidden; border: 0; border-radius: 4px; }
   .rail-format-plate { height: 100%; padding: 0 var(--sp-5); gap: var(--sp-4); }
   .rail-format-name { overflow: hidden; font-size: var(--fs-body); white-space: nowrap; text-overflow: ellipsis; }
-  .rail-format-sub { display: none; }
-  .rail-settings-text { display: none; }
+  .rail-format-sub, .rail-settings-text { display: none; }
   /* I numeri delle sezioni servono solo sul computer: qui c'è la riga di stato */
   .rail .tabs.vertical .tab-count { display: none; }
   .rail-foot { flex: none; padding: 0; }
@@ -51,12 +50,9 @@
     right: 0;
     bottom: 0;
     z-index: 45;
-    padding: var(--sp-3) max(var(--sp-4), env(safe-area-inset-right)) calc(var(--sp-3) + var(--safe-b)) max(var(--sp-4), env(safe-area-inset-left));
-    background: var(--panel);
     border-top: 1px solid var(--line);
-    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.35);
   }
-  .tabs.vertical { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: var(--sp-2); }
+  .tabs.vertical { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
   /* Confronto non c'è ancora: sul telefono non ruba spazio ai tasti veri */
   .tabs.vertical #tab-compare { display: none; }
   .tabs.vertical [role='tab'] {
@@ -72,12 +68,9 @@
     clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
   }
   .tabs.vertical .tab-icon { width: auto; height: auto; background: none; }
-  .tabs.vertical .tab-icon .icon { width: 20px; height: 20px; }
-  .tabs.vertical .tab-text { justify-items: center; gap: 1px; width: 100%; }
-  .tabs.vertical .tab-name { font-size: var(--fs-section); }
-  .tabs.vertical .tab-status { max-width: 100%; font-size: var(--fs-label); }
+  .tabs.vertical .tab-name { font-size: var(--fs-section); letter-spacing: 0.01em; }
+  .tabs.vertical .tab-status { max-width: 100%; }
   .tabs.vertical [role='tab'][aria-selected='true'] { width: auto; clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
-  .tabs.vertical [role='tab'][aria-selected='true'] .tab-icon { background: none; color: var(--on-accent-2); }
   .tabs.vertical [role='tab']:hover:not([aria-selected='true']) { background: none; }
   .tabs.vertical [role='tab']:hover:not([aria-selected='true']) .tab-icon { background: none; }
   .tabs.vertical .tab-count { position: absolute; top: 2px; right: 12px; margin: 0; }
@@ -86,11 +79,10 @@
   .band { display: flex; flex-direction: column; gap: var(--sp-5); padding: var(--sp-6) 0 var(--sp-8); }
   .band > .team { order: 2; }
   .band > .grade-badge { order: 1; margin: 0 var(--sp-7); }
-  .team-head { flex-wrap: nowrap; gap: var(--sp-4); margin: 0 0 var(--sp-5); padding: 0 var(--sp-7); overflow-x: auto; scrollbar-width: none; }
+  .team-head { flex-wrap: nowrap; gap: var(--sp-4); margin: 0 0 var(--sp-5); padding: 0 var(--sp-7); overflow-x: auto; scrollbar-width: none; align-items: center; }
   .team-head::-webkit-scrollbar { display: none; }
   .team-head h2 { flex: none; }
   .team-head .team-action, .team-quick .popover > summary { flex: none; height: 36px; white-space: nowrap; }
-  .team-head { align-items: center; }
   .team-plate, .team-quick { flex: none; }
   /* Sotto i 600 px le scorciatoie (Importa, Esporta, Svuota) non stanno accanto alla targa e alla guida: vanno su una
      riga loro, allineate a destra, invece di uscire dallo schermo */
@@ -147,7 +139,7 @@
     padding: 0 var(--sp-6) var(--sp-5);
   }
   .band:not(.collapsed) .grade-badge .grade-visual { display: contents; }
-  .band:not(.collapsed) .grade-badge .grade-head { grid-column: 1 / -1; grid-row: 1; margin: 0 -12px var(--sp-4); }
+  .band:not(.collapsed) .grade-badge .grade-head { grid-column: 1 / -1; grid-row: 1; margin: 0 -12px var(--sp-4); display: flex; align-items: center; padding-top: 0; padding-bottom: 0; }
   .band:not(.collapsed) .grade-badge .letter { grid-column: 1; grid-row: 2 / span 3; align-self: start; font-size: 50px; }
   .band:not(.collapsed) .grade-badge .overall { grid-column: 2; grid-row: 2; align-self: end; font-size: var(--fs-title-l); white-space: nowrap; }
   .band:not(.collapsed) .grade-badge .label { grid-column: 2; grid-row: 3; font-size: var(--fs-caption); }
@@ -155,7 +147,7 @@
   .band:not(.collapsed) .grade-badge:not(.none) .label { flex-direction: column; align-items: flex-start; gap: 3px; }
   .band:not(.collapsed) .grade-badge .grade-type { font-size: var(--fs-caption); }
   .band:not(.collapsed) .grade-badge .grade-areas { grid-column: 3; grid-row: 2 / span 4; gap: 1px; margin: 0; }
-  .band:not(.collapsed) .grade-badge button.grade-area { grid-template-columns: 60px minmax(0, 1fr) 28px 10px; box-sizing: border-box; min-height: 22px; margin: 0; }
+  .band:not(.collapsed) .grade-badge button.grade-area { grid-template-columns: 60px minmax(0, 1fr) 28px 10px; box-sizing: border-box; margin: 0; }
 
   /* ── Sezione Pokémon: barra degli strumenti su più righe, carte dei candidati a due colonne ── */
   .toolbar { flex-wrap: wrap; }
@@ -222,10 +214,9 @@
   /* Filtri: la finestra a tutto schermo, un gruppo sotto l'altro, tipi su due colonne */
   .help-backdrop.filters-backdrop { padding: 0; place-items: stretch; }
   .help-dialog.filters-dialog { width: 100% !important; height: 100dvh; max-height: none; border-radius: 0; border: 0; }
-  .filters-body { padding: var(--sp-7) var(--sp-7) var(--sp-9); }
+  .filters-body { padding: var(--sp-7) var(--sp-7) var(--sp-9); gap: var(--sp-4); }
   /* Gruppi a scomparsa (chiusi all'inizio, tranne il tipo del Pokémon): il titolo è la stessa fascia dei riquadri
      dell'editor (chiara al centro, sfuma ai lati, filo sotto), con il nome al centro, le scelte in ciano sotto e la freccetta */
-  .filters-body { gap: var(--sp-4); }
   .fgroup.collapsible + .fgroup.collapsible { margin-top: 0; }
   .fgroup-toggle-wrap { margin: 0; font: inherit; }
   .fgroup-toggle { position: relative; display: grid; grid-template-columns: 28px minmax(0, 1fr) 28px; align-items: center; width: 100%; min-height: 48px;
@@ -267,7 +258,7 @@
   .help-dialog.rating-help, .help-frame.with-peek > .help-dialog.rating-help { height: calc(100dvh - 24px); }
 
   /* L'avviso con Annulla sta sopra le sezioni */
-  .undo-toast { left: 12px; translate: none; top: auto; bottom: calc(var(--bottom-h) + var(--safe-b) + 12px); min-width: 0; width: calc(100vw - 24px); max-width: none; }
+  .undo-toast { left: 12px; translate: none; top: auto; bottom: calc(var(--bottom-h) + var(--safe-b) + 12px); min-width: 0; width: calc(100vw - 24px); max-width: none; display: flex; align-items: center; gap: var(--sp-5); padding: var(--sp-3) 44px var(--sp-4) var(--sp-6); }
 
   /* Il nome per le transizioni fa della colonna un livello a sé: la scheda del candidato resterebbe sotto le barre */
   .tab-body { padding: var(--sp-8) var(--sp-7) 24px; view-transition-name: none; }
@@ -280,7 +271,6 @@
   .band .slots { grid-auto-flow: row; grid-template-columns: repeat(6, minmax(0, 1fr)); grid-auto-columns: auto; overflow: visible; padding-inline: var(--sp-9); }
   .band:not(.collapsed) .slot > .slot-card, .band:not(.collapsed) .slot.empty { height: 176px; }
   .band:not(.collapsed) .slot > .slot-card .sprite { width: min(100cqh, 100cqw, 96px); height: min(100cqh, 100cqw, 96px); }
-  .band .slots { padding-inline: var(--sp-9); }
   .team-head { padding-inline: var(--sp-9); }
   .band > .grade-badge { margin-left: var(--sp-9); }
   .tab-body { padding-inline: var(--sp-9); }
@@ -385,6 +375,9 @@
     padding: var(--sp-5) var(--sp-7) calc(var(--sp-5) + var(--safe-b));
     background: var(--panel);
     border-top: 1px solid var(--line-soft);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: var(--sp-4);
   }
 }
 @media (min-width: 760px) and (max-width: 1099px) {
@@ -413,7 +406,6 @@
 }
 @media (prefers-reduced-motion: reduce) { .picker.sheet-open > :is(.detail, .sheet-back, .sheet-scrim) { animation: none; } }
 @media (max-width: 1099px) {
-  .picker.sheet-open > .detail .detail-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: var(--sp-4); }
   .picker.sheet-open > .detail .detail-actions > * { min-height: 44px; margin: 0; white-space: nowrap; }
   .picker.sheet-open > .detail .detail-actions .go { font-size: var(--fs-body); }
 }
@@ -430,8 +422,8 @@
 @media (max-width: 1099px) {
   /* Solo la riga del nome (nome, tipi, shiny, Set, copia e chiudi) resta in vista mentre scorri.
      La testata si scioglie (display: contents) così la riga del nome è figlia diretta dell'editor e resta ferma per tutta la sua altezza */
-  .drawer .set-editor .editor-head { display: contents; }
-  .drawer .set-editor .editor-top { position: sticky; top: -12px; z-index: 5; margin: -12px -14px 0; padding: var(--sp-6) var(--sp-7) var(--sp-5); background: var(--panel); border-bottom: 1px solid var(--line-soft); }
+  .drawer .set-editor .editor-head { display: block; margin: -12px -14px 0; }
+  .drawer .set-editor .editor-top { top: -12px; z-index: 5; background: var(--panel); margin: 0; border-bottom: 0; flex-wrap: wrap; column-gap: var(--sp-4); display: grid; grid-template-columns: minmax(0, 1fr); }
   /* Il menu Set non esce dallo schermo */
   .set-menu-pop { width: min(410px, calc(100vw - 28px)); }
   .editor-foot { flex-direction: column; align-items: stretch; }
@@ -477,15 +469,11 @@
     z-index: 61;
     left: 0;
     right: 0;
-    top: auto;
     bottom: 0;
     width: auto;
-    height: 85dvh;
-    max-height: 85dvh;
     overflow: auto;
     overscroll-behavior: contain;
     padding-bottom: calc(var(--sp-7) + var(--safe-b));
-    border-radius: 8px 8px 0 0;
     box-shadow: 0 0 0 100vmax rgba(6, 7, 12, 0.6);
     animation: sheet-up 0.22s var(--ease);
   }
@@ -494,12 +482,11 @@
 @media (max-width: 1099px) and (not ((min-width: 900px) and (pointer: fine))) {
   /* Le colonne una sotto l'altra: i tuoi Pokémon, le scelte, le proposte */
   .fill-body { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'mine' 'side' 'main'; }
-  .fill-top { position: sticky; top: 0; z-index: 1; background: var(--ground); }
   .fill-mine-row { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -14px; padding: 0 var(--sp-7); }
   .fill-keep { flex: none; min-height: 44px; }
   /* I tipi di team in una fila che scorre: le proposte prendono tutta la larghezza */
-  .fill-types { display: flex; gap: var(--sp-3); overflow-x: auto; scrollbar-width: none; margin: 0 -14px; padding: 0 var(--sp-7); }
-  .fill-types .fill-option { flex: none; width: auto; max-width: 200px; }
+  .fill-types { display: flex; overflow-x: auto; scrollbar-width: none; }
+  .fill-types .fill-option { flex: none; width: auto; }
   .fill-side { gap: var(--sp-6); }
   .fill-cards { grid-template-columns: minmax(0, 1fr); }
 }
@@ -507,18 +494,17 @@
   .spread-presets { min-width: 0; max-width: calc(100vw - 28px); }
 }
 @media (max-width: 1099px) and (not ((min-width: 900px) and (pointer: fine))) {
-  .fill-row { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: 'mons mons mons' 'kind result action' 'gaps gaps gaps'; gap: var(--sp-3) var(--sp-5); }
+  .fill-row { gap: var(--sp-3) var(--sp-5); grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: 'mons mons mons' 'kind result action' 'gaps gaps gaps'; }
   .fill-mons { grid-template-columns: repeat(6, minmax(0, 1fr)); }
   .fill-mon-name { display: none; }
   .fill-kind { justify-self: start; }
   .fill-about, .fill-why { justify-items: start; }
-  .fill-result { justify-items: start; text-align: left; }
+  .fill-result { grid-auto-flow: column; justify-content: start; align-items: baseline; gap: var(--sp-4); text-align: right; }
   .fill-foot { flex-wrap: wrap; }
   .fill-pager .step { width: 44px; height: 44px; }
 }
 @media (max-width: 1099px) and (not ((min-width: 900px) and (pointer: fine))) {
   .band:has(.fill-panel, .team-head details[open]) .band-toggle { visibility: hidden; }
-  .fill-result { grid-auto-flow: column; justify-content: start; align-items: baseline; gap: var(--sp-4); }
 }
 
 /* ── Editor sul telefono (2026-11-19): tre schede sotto la testata ferma ────────────────────────────────── */
@@ -526,25 +512,30 @@
 .set-editor fieldset { min-inline-size: 0; }
 @media (max-width: 1099px) {
   /* La testata intera (nome, tipi, Set, copia, chiudi e le schede) resta ferma in alto mentre la scheda scorre */
-  .drawer .set-editor .editor-head { display: block; position: sticky; top: -12px; z-index: 6; margin: -12px -14px 0; background: var(--panel); border-bottom: 1px solid var(--line-soft); }
-  .drawer .set-editor .editor-top { position: static; margin: 0; border-bottom: 0; flex-wrap: wrap; row-gap: var(--sp-4); column-gap: var(--sp-4); padding: var(--sp-5) var(--sp-6) var(--sp-4); }
   /* Riga 1: nome (intero, si rimpicciolisce), tipi e shiny; riga 2: Set largo, copia e chiudi */
-  .set-editor .editor-title { flex: 1 1 100%; flex-wrap: wrap; row-gap: var(--sp-2); margin-right: 0; }
-  .set-editor .editor-title .nickname strong { font-size: 22px; }
+  .set-editor .editor-title {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    row-gap: var(--sp-2);
+    margin-right: 0;
+    isolation: isolate;
+    transition: min-height 0.2s var(--ease), padding 0.2s var(--ease);
+  }
+  .set-editor .editor-title .nickname strong { font-size: 28px; text-shadow: 0 2px 0 #0008; transition: font-size 0.2s var(--ease); white-space: normal; line-height: 1.05; }
   /* Riga 1 nome e shiny, riga 2 i tipi (a sinistra sotto il nome): un nome lungo non spinge fuori i tipi né lo shiny */
-  .set-editor .editor-title > .types { order: 3; flex-basis: 100%; }
+  .set-editor .editor-title > .types { order: 0; flex-basis: auto; display: flex; gap: var(--sp-3); }
   .set-editor .editor-title .types .type-chip > span { width: auto; padding: 0 var(--sp-3) 0 var(--sp-2); }
   .set-editor .editor-title .shiny-toggle { width: 40px; height: 40px; }
   .set-editor .editor-actions { flex: 1 1 100%; margin-left: 0; flex-wrap: nowrap; }
-  .set-editor .editor-actions .set-menu { flex: 1; min-width: 0; }
+  .set-editor .editor-actions .set-menu { flex: 1; min-width: 0; margin: var(--sp-6) var(--sp-7) 0; }
   .set-editor .editor-actions .set-menu-button { width: 100%; height: 44px; }
   .set-editor .editor-actions .set-menu-current { flex: 1; max-width: none; text-align: left; }
-  .set-editor .editor-actions :is(.member-copy, .editor-close) { width: 44px; height: 44px; }
+  .set-editor .editor-actions :is(.member-copy, .editor-close) { width: 44px; height: 44px; z-index: 2; }
   .set-editor .editor-tera { flex: 1 1 100%; }
   /* Le schede: tre linguette larghe uguali, quella aperta sottolineata nel ciano del lavoro */
-  .editor-tabs { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border-top: 1px solid var(--line-soft); }
-  .editor-tabs [role='tab'] { height: 44px; padding: 0; border: 0; border-radius: 0; background: none; font: 600 var(--fs-section)/1 var(--display); color: var(--muted); justify-content: center; }
-  .editor-tabs [role='tab'][aria-selected='true'] { color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+  .editor-tabs { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border-top: 1px solid var(--line-soft); margin: var(--sp-6) var(--sp-7) 0; border: 0; border-radius: 8px; background: var(--field); box-shadow: inset 0 0 0 1px var(--line-soft); }
+  .editor-tabs [role='tab'] { padding: 0; border: 0; background: none; font: 600 var(--fs-section)/1 var(--display); color: var(--muted); justify-content: center; }
+  .editor-tabs [role='tab'][aria-selected='true'] { color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
   .editor-tabs [role='tab']:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
   /* Una scheda alla volta */
   /* Strisciare cambia scheda (useSwipeTabs): mentre si striscia il contenuto segue il dito, la testata resta; se non
@@ -556,12 +547,12 @@
   .set-editor[data-tab='duel'] .stats-cell, .set-editor[data-tab='duel'] .set-box, .set-editor[data-tab='duel'] .editor-foot { display: none; }
   /* Statistiche a tutta larghezza: nome, freccia, valore, EV, IV (i cursori non ci sono: gli EV si scrivono) */
   .set-editor .stat-row { grid-template-columns: minmax(0, 1fr) 14px 48px 64px 48px; gap: var(--sp-4); padding: var(--sp-2) var(--sp-3); }
-  .set-editor .stat-row :is(.ev-input, .iv-input) { height: 40px; font-size: var(--fs-section); }
+  .set-editor .stat-row :is(.ev-input, .iv-input) { font-size: var(--fs-section); }
   /* Intestazione: EV e il totale sopra valore e casella degli EV, IV sopra gli IV (la terza cella vuota non serve) */
   .set-editor .stat-head > span:nth-child(3) { display: none; }
   .set-editor .stat-head .ev-total { grid-column: 3 / 5; grid-template-columns: minmax(0, 1fr) auto; }
   .set-editor .stat-head .ev-total .ev-used { grid-column: 2; }
-  .set-editor .stat-head .ev-total .ev-head { grid-column: 1; justify-self: start; }
+  .set-editor .stat-head .ev-total .ev-head { grid-column: 1; }
   /* Il riquadro non si allarga per il contenuto: la colonna si ferma alla larghezza dello schermo */
   .set-editor .stats-cell, .set-editor .evs { grid-template-columns: minmax(0, 1fr); min-width: 0; }
   /* La riga della Velocità: la frase va a capo, il rimando (che apre la lista con un tocco sulla frase) non serve */
@@ -575,7 +566,6 @@
   .set-editor .duel-art::after { clip-path: none; -webkit-mask-image: linear-gradient(to left, #000 0 30%, transparent 100%); mask-image: linear-gradient(to left, #000 0 30%, transparent 100%); }
   .set-editor .duel-head { grid-column: 1; grid-row: 1; min-height: 124px; justify-content: center; padding: var(--sp-5) 128px var(--sp-5) var(--sp-6); }
   .set-editor .duel-verdict { white-space: nowrap; }
-  .set-editor .duel-settings { width: 40px; height: 40px; }
   .set-editor .duel-stage { left: auto; right: var(--sp-5); top: 14px; bottom: auto; transform: none; }
   .set-editor .duel-rows { grid-column: 1; grid-row: 2; padding: var(--sp-3) var(--sp-6) var(--sp-5); }
   /* La colonna dei colpi più stretta: la mossa e il suo interruttore ci stanno interi (la Velocità sborda a sinistra, sopra c'è solo il titolo) */
@@ -614,7 +604,7 @@
 @media (max-width: 599px) {
   /* Riga 1: la targa del team e la guida (l'azione principale); riga 2: team salvati e scorciatoie a icona (il nome
      resta per i lettori di schermo e nel tooltip), bersagli da dito */
-  .team-head .team-guide-slot { order: 1; }
+  .team-head .team-guide-slot { order: 0; }
   .team-head .team-saved { order: 2; margin-left: auto; }
   .team-head .team-quick { order: 3; flex: 1 1 100%; justify-content: space-between; gap: var(--sp-4); }
   .team-head .team-quick::before { display: none; }
@@ -625,7 +615,6 @@
 /* L'avviso con Annulla sotto i 1100 px: una striscia di una riga (frase, Annulla, ×) sopra la barra delle sezioni,
    non un riquadro grande in mezzo allo schermo */
 @media (max-width: 1099px) {
-  .undo-toast { display: flex; align-items: center; gap: var(--sp-5); padding: var(--sp-3) 44px var(--sp-4) var(--sp-6); }
   .undo-toast .undo-text { flex: 1; min-width: 0; flex-wrap: nowrap; justify-content: flex-start; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .undo-toast .undo-actions { margin-top: 0; flex: none; }
   .undo-toast .undo-button { min-height: 40px; }
@@ -674,7 +663,7 @@
 /* ── Voto sul telefono e sul tablet: compatto e ordinato ───────────────────────────────────────────────── */
 @media (max-width: 1099px) {
   /* La fascia "Voto" alta 36: il "?" ci sta dentro, a destra, non sotto */
-  .band:not(.collapsed) .grade-badge .grade-head { min-height: 36px; display: flex; align-items: center; padding-top: 0; padding-bottom: 0; }
+  .band:not(.collapsed) .grade-badge .grade-head { min-height: 36px; }
   .band:not(.collapsed) .grade-badge .grade-tools { top: 0; right: 14px; height: 36px; }
   .band:not(.collapsed) .grade-badge .grade-tools .help-button { width: 28px; height: 28px; }
   /* Le aree: righe da 30, e Ruoli e Bonus/Malus col valore allineato a destra come i numeri delle altre */
@@ -716,12 +705,11 @@
   .band:not(.collapsed) .grade-badge button.grade-area.grade-bm > b { grid-column: 2; grid-row: 1; }
 
   /* Testata del team: targa, guida e il menu "…"; le scorciatoie vere restano vive ma fuori vista (le apre il menu) */
-  .team-head { flex-wrap: nowrap; }
-  .team-head .team-guide-slot { order: 0; }
+  .team-head { flex-wrap: nowrap; gap: var(--sp-6); padding-right: var(--sp-8); }
   .team-head :is(.team-saved, .team-quick) { position: absolute; width: 0; height: 0; margin: 0; overflow: visible; visibility: hidden; }
   .team-head :is(.team-saved, .team-quick) :is(details[open] > :not(summary), .export-note) { visibility: visible; }
-  .team-more { margin-left: auto; flex: none; }
-  .team-more-button { width: 44px; height: 40px; padding: 0; justify-content: center; border-radius: 8px 2px 8px 2px; background: var(--raised); border: 1px solid var(--line); color: var(--muted); }
+  .team-more { flex: none; margin-left: auto; padding-left: var(--sp-4); }
+  .team-more-button { width: 44px; height: 40px; padding: 0; justify-content: center; border-radius: 8px 2px 8px 2px; background: var(--raised); border: 1px solid var(--line); color: var(--muted); position: relative; }
   .team-more-button[aria-expanded='true'] { color: var(--accent-ink); border-color: var(--accent); }
   .team-more-sheet { display: flex; flex-direction: column; }
   .team-more-title { margin: 0; padding: 0 var(--sp-7) var(--sp-3); font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
@@ -737,72 +725,53 @@
 /* Editor a riepilogo da gioco: telefono e tablet in verticale */
 @media (max-width: 1099px) {
   /* Editor: la testata è il riepilogo del membro (non resta ferma: le schede scorrono con lei) */
-  .drawer .set-editor .editor-head { position: relative; top: auto; border-bottom: 0; background: none; }
-  .drawer .set-editor .editor-top { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); padding: 0; row-gap: 0; }
-  .set-editor .editor-title { position: relative; min-height: 150px; display: grid; align-content: end; justify-items: start; gap: var(--sp-4); padding: 56px 132px var(--sp-7) var(--sp-7);
+  .drawer .set-editor .editor-head { border-bottom: 0; }
+  .drawer .set-editor .editor-top { position: relative; padding: 0; row-gap: 0; }
+  .set-editor .editor-title { position: relative; display: grid; align-content: end; justify-items: start; gap: var(--sp-4); padding: 56px 132px var(--sp-7) var(--sp-7);
     border-bottom: 3px solid var(--accent-2); overflow: hidden; }
-  .set-editor .editor-title > .types { order: 0; flex-basis: auto; display: flex; gap: var(--sp-3); }
-  .set-editor .editor-title .nickname strong { font-size: 28px; text-shadow: 0 2px 0 #0008; }
   .set-editor .editor-title .species-tag { position: static; order: -1; }
   .editor-hero { display: block; position: absolute; inset: 0; z-index: -1;
     background: radial-gradient(130% 120% at 88% 30%, color-mix(in srgb, var(--t1) 42%, transparent), transparent 62%), var(--stripes), var(--panel); }
-  .editor-hero > .sprite { position: absolute; right: var(--sp-6); bottom: var(--sp-3); width: 112px; height: 112px; image-rendering: pixelated; filter: drop-shadow(0 4px 4px #0008); }
-  .set-editor .editor-title { isolation: isolate; }
+  .editor-hero > .sprite { position: absolute; right: var(--sp-6); bottom: var(--sp-3); width: 112px; height: 112px; image-rendering: pixelated; filter: drop-shadow(0 4px 4px #0008); transition: all 0.2s var(--ease); }
   /* Shiny, Copia e Chiudi in alto a destra sulla testata; il Set sotto, largo */
   .set-editor .editor-actions { display: contents; }
-  .set-editor .editor-actions .set-menu { margin: var(--sp-6) var(--sp-7) 0; }
-  .set-editor .editor-actions :is(.member-copy, .editor-close) { position: absolute; top: var(--sp-5); z-index: 2; background: color-mix(in srgb, var(--field) 70%, transparent); }
+  .set-editor .editor-actions :is(.member-copy, .editor-close) { position: absolute; top: var(--sp-5); background: color-mix(in srgb, var(--field) 70%, transparent); }
   /* I contenitori dei tooltip non fanno da riferimento: i pulsanti si posizionano sulla testata */
   .set-editor .editor-actions > .hint-wrap { position: static; }
-  .set-editor .editor-actions .editor-close { right: var(--sp-6); }
-  .set-editor .editor-actions .member-copy { right: calc(var(--sp-6) + 52px); }
-  .set-editor .editor-title .shiny-toggle { position: absolute; top: var(--sp-5); left: var(--sp-6); z-index: 2; }
+  .set-editor .editor-title .shiny-toggle { position: absolute; z-index: 2; }
   .set-editor .editor-title > .hint-wrap, .set-editor .editor-title > span:has(> .shiny-toggle) { position: static; }
   .set-editor .editor-tera { margin: var(--sp-5) var(--sp-7) 0; }
   /* Le schede come un selettore a tre */
-  .editor-tabs { margin: var(--sp-6) var(--sp-7) 0; padding: 3px; border: 0; border-radius: 8px; background: var(--field); box-shadow: inset 0 0 0 1px var(--line-soft); }
-  .editor-tabs [role='tab'] { height: 38px; border-radius: 6px; }
+  .editor-tabs { padding: 3px; }
+  .editor-tabs [role='tab'] { border-radius: 6px; }
   .editor-tabs [role='tab'][aria-selected='true'] { background: var(--raised); }
 }
 /* ── Telefono: testata del team più ariosa, pallino delle modifiche sul menu, team compresso (2026-11-19) ── */
 @media (max-width: 599px) {
   /* Il nome del team salvato non sta sulla targa (resta per i lettori di schermo): la targa dice solo quanti sono */
   .team-head .plate-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .team-head { gap: var(--sp-6); padding-right: var(--sp-8); }
-  .team-more { margin-left: auto; padding-left: var(--sp-4); }
   /* Team salvato cambiato e non risalvato: il pallino giallo sul menu "…" (dove c'è Team salvati) e sulla sua voce */
-  .team-more-button { position: relative; }
   .team-head:has(.plate-dot) .team-more-button::after, .team-head:has(.plate-dot) .team-more-sheet [data-saved]::after {
     content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 0 2px var(--ground); }
   .team-head:has(.plate-dot) .team-more-button::after { position: absolute; top: -3px; right: -3px; }
   .team-head:has(.plate-dot) .team-more-sheet [data-saved]::after { margin-left: auto; }
 
   /* Team compresso: le sei carte in fila larghe uguali (solo lo sprite e la striscia del tipo), il voto compatto a destra */
-  .band.collapsed { gap: var(--sp-5); align-items: center; padding: var(--sp-4) var(--sp-7) var(--sp-8); }
+  .band.collapsed { align-items: center; padding: var(--sp-4) var(--sp-7) var(--sp-8); gap: var(--sp-4); }
   .band.collapsed > .team { flex: 1 1 0; min-width: 0; }
-  .band.collapsed .slots { grid-auto-flow: row; grid-template-columns: repeat(6, minmax(0, 1fr)); grid-auto-columns: auto; gap: var(--sp-3); padding: 0; overflow: visible; scroll-snap-type: none; }
+  .band.collapsed .slots { grid-auto-flow: row; grid-template-columns: repeat(6, minmax(0, 1fr)); grid-auto-columns: auto; padding: 0; overflow: visible; scroll-snap-type: none; gap: var(--sp-2); }
   .band.collapsed .slot > .slot-card, .band.collapsed .slot.empty { height: 48px; min-width: 0; padding: 0; justify-content: center; align-items: center; }
-  .band.collapsed .slot > .slot-card .mini-icon { margin: 0 auto; }
+  .band.collapsed .slot > .slot-card .mini-icon { margin: 0 auto; max-width: 100%; }
   .band.collapsed .slot.empty .empty-ring { width: 26px; height: 26px; }
-  .band.collapsed > .grade-badge { flex: none; margin: 0; }
+  .band.collapsed > .grade-badge { flex: none; margin: 0; width: auto; min-width: 0; }
   .band.collapsed .grade-badge .grade-mini { display: none; }
-  .band.collapsed .grade-badge .grade-pop-toggle { height: 48px; gap: var(--sp-4); padding: 0 var(--sp-4) 0 var(--sp-5); border-radius: 8px 2px 8px 2px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line-soft); }
-  .band.collapsed .grade-badge .letter { font-size: 34px; }
-  .band.collapsed .grade-badge .overall { font-size: var(--fs-section); }
-}
-@media (max-width: 599px) {
-  /* Il voto compresso: lettera e punteggio sulla stessa riga, largo quanto serve */
-  .band.collapsed > .grade-badge { width: auto; min-width: 0; }
-  .band.collapsed .grade-badge .grade-pop-toggle { width: auto; align-items: center; }
-  .band.collapsed .grade-badge .overall { position: static; align-self: center; margin: 0; }
+  .band.collapsed .grade-badge .grade-pop-toggle { border-radius: 8px 2px 8px 2px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line-soft); width: auto; align-items: center; flex-direction: column; gap: 2px; min-width: 56px; padding: 0 var(--sp-4); }
+  .band.collapsed .grade-badge .letter { font-size: 26px; line-height: 0.9; }
+  .band.collapsed .grade-badge .overall { position: static; align-self: center; margin: 0; font-size: var(--fs-caption); white-space: nowrap; }
 }
 @media (max-width: 599px) {
   /* Team compresso col dito: il voto in colonna (lettera sopra, punteggio sotto) lascia alle carte almeno 44 px di larghezza */
-  .band.collapsed { gap: var(--sp-4); }
-  .band.collapsed .slots { gap: var(--sp-2); }
-  .band.collapsed .grade-badge .grade-pop-toggle { flex-direction: column; justify-content: center; gap: 2px; min-width: 56px; padding: 0 var(--sp-4); }
-  .band.collapsed .grade-badge .letter { font-size: 26px; line-height: 0.9; }
-  .band.collapsed .grade-badge .overall { font-size: var(--fs-caption); white-space: nowrap; }
+  .band.collapsed .grade-badge .grade-pop-toggle { justify-content: center; }
   .band.collapsed .grade-badge .grade-pop-caret { display: none; }
   /* La maniglia per comprimere e riaprire il team: più grande, e la zona del tocco alta 44 px */
   .band { margin-bottom: var(--sp-8); }
@@ -861,20 +830,15 @@ html.touch-tips .band .slot > .slot-card { -webkit-touch-callout: none; -webkit-
 @media (max-width: 1099px) {
   /* La testata (riepilogo, Set e schede) resta ferma in alto mentre la scheda scorre */
   .drawer .set-editor .editor-head { position: sticky; top: -12px; z-index: 6; background: var(--ground); box-shadow: 0 1px 0 var(--line-soft); }
-  .set-editor .editor-tabs { margin-bottom: var(--sp-5); }
+  .set-editor .editor-tabs { margin-top: var(--sp-4); margin-bottom: var(--sp-3); }
   /* × a sinistra (chiude), shiny e copia insieme a destra: cerchi uguali da 40, semitrasparenti sul colore del tipo */
   .set-editor :is(.editor-actions .member-copy, .editor-actions .editor-close, .editor-title .shiny-toggle) {
     position: absolute; z-index: 3; top: var(--sp-5); width: 40px; height: 40px; padding: 0; justify-content: center; border-radius: 50%;
     border: 1px solid color-mix(in srgb, #fff 18%, transparent); background: color-mix(in srgb, var(--ground) 55%, transparent);
     -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); color: var(--text); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35); }
-  .set-editor .editor-actions .editor-close { left: var(--sp-6); right: auto; }
-  .set-editor .editor-title .shiny-toggle { left: auto; right: calc(var(--sp-6) + 48px); }
   .set-editor .editor-actions .member-copy { right: var(--sp-6); }
-  .set-editor .editor-title .shiny-toggle[aria-pressed='true'] { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 55%, transparent); }
+  .set-editor .editor-title .shiny-toggle[aria-pressed='true'] { border-color: color-mix(in srgb, var(--warn) 55%, transparent); color: var(--warn); background: radial-gradient(closest-side, color-mix(in srgb, var(--warn) 22%, transparent), transparent); }
   .set-editor :is(.member-copy, .editor-close, .shiny-toggle) .icon { width: 18px; height: 18px; }
-  .set-editor .editor-title { transition: min-height 0.2s var(--ease), padding 0.2s var(--ease); }
-  .set-editor .editor-title .nickname strong { transition: font-size 0.2s var(--ease); }
-  .editor-hero > .sprite { transition: all 0.2s var(--ease); }
 
 }
 @media (max-width: 1099px) and (prefers-reduced-motion: reduce) {
@@ -895,12 +859,11 @@ html.touch-tips .band .slot > .slot-card { -webkit-touch-callout: none; -webkit-
     background: radial-gradient(closest-side, rgb(5 6 10 / 0.38), transparent); color: var(--text); filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.6)); }
   .set-editor .editor-actions .editor-close { top: var(--sp-3); right: var(--sp-3); left: auto; }
   .set-editor .editor-title .shiny-toggle { top: auto; bottom: var(--sp-3); right: calc(var(--sp-6) + 92px); left: auto; }
-  .set-editor .editor-title .shiny-toggle[aria-pressed='true'] { color: var(--warn); background: radial-gradient(closest-side, color-mix(in srgb, var(--warn) 22%, transparent), transparent); }
   .set-editor :is(.editor-close, .shiny-toggle) .icon { width: 20px; height: 20px; }
   /* Il riepilogo senza la fila dei pulsanti in alto: il nome sale un po' */
   .set-editor .editor-title { padding-top: 44px; min-height: 150px; }
   /* Un nome lungo va a capo (Urshifu-Rapid- / Strike) invece di tagliarsi */
-  .set-editor .editor-title .nickname strong { white-space: normal; line-height: 1.05; text-align: left; }
+  .set-editor .editor-title .nickname strong { text-align: left; }
 }
 /* Telefono: niente piede dell'editor (Ruoli e Sostituisci). Sostituisci sta nel menu del membro (tenendo premuta la carta) */
 @media (max-width: 1099px) {
@@ -923,9 +886,9 @@ html.touch-tips .band .slot > .slot-card { -webkit-touch-callout: none; -webkit-
   .tabs.vertical [role='tab'][aria-selected='true'] .tab-icon { background: var(--accent-2); color: var(--on-accent-2); }
   .tabs.vertical .tab-icon .icon { width: 20px; height: 20px; }
   .tabs.vertical .tab-text { width: 100%; justify-items: center; gap: 1px; }
-  .tabs.vertical .tab-name { font: 700 var(--fs-caption)/1.1 var(--display); font-style: italic; letter-spacing: 0.01em; color: inherit; }
+  .tabs.vertical .tab-name { font: 700 var(--fs-caption)/1.1 var(--display); font-style: italic; color: inherit; }
   .tabs.vertical [role='tab'][aria-selected='true'] .tab-name { color: var(--text); }
-  .tabs.vertical .tab-status { max-width: 100%; font-size: var(--fs-label); }
+  .tabs.vertical .tab-status { font-size: var(--fs-label); }
   /* Riga di stato della sezione aperta: grigia come le altre, il voto e gli avvisi nei loro colori */
   .tabs.vertical [role='tab'][aria-selected='true'] .tab-status { color: var(--muted); }
   .tabs.vertical [role='tab'][aria-selected='true'] .tab-status * { color: inherit; }
@@ -1065,10 +1028,10 @@ html { -webkit-tap-highlight-color: transparent; }
   .fill-settings .fill-keep-name { display: none; }
   /* La carta della proposta: i sei Pokémon, poi a sinistra il tipo di team e a destra voto e Usa (niente riga dei
      guadagni: il voto li riassume) */
-  .fill-row { grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: 'mons mons mons' 'kind result action' 'gaps gaps gaps'; align-items: center; }
+  .fill-row { align-items: center; }
   .fill-about { justify-items: start; }
   .fill-proposal .fill-why { display: none; }
-  .fill-result { justify-items: end; text-align: right; }
+  .fill-result { justify-items: end; }
 }
 
 /* ── Telefono: guida più alta, lucchetto in alto a destra, editor senza striscia, team proposti a colori (2026-11-20) ── */
@@ -1121,9 +1084,9 @@ html { -webkit-tap-highlight-color: transparent; }
     /* Il filo del tipo di team in cima: una striscia dentro la carta (un bordo spesso si piegherebbe sugli angoli tondi) */
     box-shadow: inset 0 3px 0 var(--k); }
   /* La migliore: un solo magenta, Usa pieno come sul computer; la carta si stacca con l'ombra, non col bordo magenta */
-  .fill-proposal.is-best { border: 1px solid var(--line); box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4); }
+  .fill-proposal.is-best { border: 1px solid var(--line); box-shadow: inset 0 3px 0 var(--k), 0 10px 26px rgba(0, 0, 0, 0.4); }
   .fill-proposal .fill-about { align-self: center; justify-self: start; justify-items: start; text-align: left; }
-  .fill-proposal .fill-kind { padding: 0; background: none; font: italic 800 var(--fs-heading)/1.1 var(--display); white-space: normal; color: var(--text); }
+  .fill-proposal .fill-kind { padding: 0; background: none; font: italic 800 var(--fs-heading)/1.1 var(--display); white-space: normal; color: color-mix(in srgb, var(--k) 70%, var(--text)); }
   .fill-proposal .fill-result { grid-area: result; display: flex; align-items: baseline; gap: var(--sp-2); }
   .fill-proposal .fill-grade { font: 600 var(--fs-section)/1 var(--ui); }
   .fill-proposal .fill-grade strong { font-size: 30px; margin-right: 2px; }
@@ -1133,7 +1096,7 @@ html { -webkit-tap-highlight-color: transparent; }
     border-radius: 8px 2px 8px 2px; font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.05em; text-transform: uppercase; }
 
   /* I Pokémon sul fondo della carta, senza caselle; il nuovo con la tacca ciano sotto */
-  .fill-proposal .fill-mons { gap: 0; }
+  .fill-proposal .fill-mons { gap: 0; padding: var(--sp-2) var(--sp-2) 0; border-radius: 4px; background: var(--field); }
   .fill-proposal .fill-mon, .fill-proposal .fill-mon.is-new { height: auto; padding: 0 0 var(--sp-2); background: none; border-radius: 0; overflow: visible; }
   .fill-proposal .fill-mon::after, .fill-proposal .fill-mon.is-new::after { display: none; }
   .fill-proposal .fill-mon.is-new::before { content: ''; position: absolute; left: 22%; right: 22%; bottom: 0; height: 3px; border-radius: 2px; background: var(--accent); }
@@ -1141,7 +1104,7 @@ html { -webkit-tap-highlight-color: transparent; }
   .fill-proposal .fill-mon .sprite { width: 58px; height: 58px; filter: drop-shadow(0 3px 3px rgb(0 0 0 / 0.5)); }
   /* Mentre calcola: in cima la riga con Eevee che ci pensa, sotto la sagoma di tre proposte (il tuo team già al suo posto,
      i nuovi ancora da arrivare), così lo schermo non resta vuoto; finito il calcolo, niente righe vuote */
-  .fill-row.fill-placeholder { display: none; }
+  .fill-row.fill-placeholder,
   .fill-row.fill-skeleton ~ .fill-row.fill-skeleton ~ .fill-row.fill-skeleton ~ .fill-row.fill-skeleton { display: none; }
   .fill-main { display: flex; flex-direction: column; gap: var(--sp-5); }
   .fill-main > .fill-think { order: -1; }
@@ -1154,9 +1117,6 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
 
 /* Completa team, carte: i Pokémon su una fascia scura e uniforme (si staccano bene), il tipo di team scritto nel suo colore */
 @media (max-width: 1099px) and (not ((min-width: 900px) and (pointer: fine))) {
-  .fill-proposal .fill-mons { padding: var(--sp-2) var(--sp-2) 0; border-radius: 4px; background: var(--field); }
-  .fill-proposal .fill-kind { color: color-mix(in srgb, var(--k) 70%, var(--text)); }
-  .fill-proposal.is-best { box-shadow: inset 0 3px 0 var(--k), 0 10px 26px rgba(0, 0, 0, 0.4); }
   .fill-proposal .fill-mon { cursor: pointer; }
 }
 
@@ -1259,7 +1219,6 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
 /* Telefono: meno aria tra la testata, le schede e il primo campo, così Strumento (e Statistiche, Sfida) salgono di una
    ventina di px; la testata grande resta (sulla scheda Set tutto sta già nello schermo) */
 @media (max-width: 1099px) {
-  .set-editor .editor-tabs { margin-top: var(--sp-4); margin-bottom: var(--sp-3); }
   .set-editor[data-tab] :is(.stats-cell, .editor-side) { margin-top: 0; }
   .set-editor[data-tab] .set-box > .custom-toggle { margin-bottom: 0; }
 }
@@ -1305,27 +1264,35 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
 
 /* ── A · Tablet in verticale (e orizzontale stretto): striscia del voto, poi la testata e le carte orizzontali 3×2 ── */
 @media (min-width: 600px) and (max-width: 1099px) and (not (((orientation: landscape) and (min-width: 760px) and (min-height: 501px)) or ((min-width: 900px) and (pointer: fine)))) {
-  .band:not(.collapsed) { display: flex; flex-direction: column; gap: var(--sp-6); padding: var(--sp-7) var(--sp-9) var(--sp-8); }
+  .band:not(.collapsed) { display: flex; flex-direction: column; padding: var(--sp-7) var(--sp-9) var(--sp-8); }
   .band:not(.collapsed) > .grade-badge { order: 1; margin: 0; }
   .band:not(.collapsed) > .team { order: 2; }
   .band:not(.collapsed) .team-head { margin: 0 0 var(--sp-5); padding: 0; overflow: visible; }
   /* Il voto in una striscia: lettera, punteggio e giudizio, poi le cinque aree affiancate (tocco = l'area in Analisi) */
-  .band:not(.collapsed) .grade-badge { display: grid; grid-template-columns: auto auto minmax(0, 1fr); grid-template-rows: auto auto; align-items: center; gap: 0 var(--sp-7);
-    padding: var(--sp-5) 84px var(--sp-5) var(--sp-7); border-radius: 0; box-shadow: inset 0 0 0 1px var(--line-soft); }
+  .band:not(.collapsed) .grade-badge {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-items: center;
+    border-radius: 0;
+    box-shadow: inset 0 0 0 1px var(--line-soft);
+  }
   .band:not(.collapsed) .grade-badge .grade-head { display: none; }
-  .band:not(.collapsed) .grade-badge .letter { grid-column: 1; grid-row: 1 / 3; align-self: center; font-size: 56px; }
-  .band:not(.collapsed) .grade-badge .overall { grid-column: 2; grid-row: 1; align-self: end; font-size: var(--fs-headline); white-space: nowrap; }
+  .band:not(.collapsed) .grade-badge .letter { grid-column: 1; grid-row: 1 / 3; align-self: center; }
+  .band:not(.collapsed) .grade-badge .overall { grid-column: 2; grid-row: 1; align-self: end; white-space: nowrap; }
   .band:not(.collapsed) .grade-badge .label { grid-column: 2; grid-row: 2; align-self: start; font-size: var(--fs-caption); }
-  .band:not(.collapsed) .grade-badge:not(.none) .label { flex-direction: column; align-items: flex-start; gap: 2px; }
+  .band:not(.collapsed) .grade-badge:not(.none) .label { flex-direction: column; align-items: flex-start; }
   .band:not(.collapsed) .grade-badge .grade-tools { top: 50%; right: var(--sp-5); height: auto; translate: 0 -50%; }
-  .band:not(.collapsed) .grade-badge .grade-tools .help-button { width: 32px; height: 32px; color: var(--muted); border-color: var(--line); }
-  .band:not(.collapsed) .grade-badge .grade-areas { grid-column: 3; grid-row: 1 / 3; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--sp-3); margin: 0; }
+  .band:not(.collapsed) .grade-badge .grade-tools .help-button { color: var(--muted); border-color: var(--line); }
+  .band:not(.collapsed) .grade-badge .grade-areas { grid-column: 3; grid-row: 1 / 3; display: grid; margin: 0; }
   .band:not(.collapsed) .grade-badge button.grade-area, .band:not(.collapsed) .grade-badge button.grade-area:is(.grade-roles, .grade-bm) {
-    grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto 4px; align-content: start; row-gap: 4px; min-height: 58px; margin: 0; padding: var(--sp-3) var(--sp-4); border-radius: 3px; background: var(--raised); }
+    margin: 0;
+    border-radius: 3px;
+    background: var(--raised);
+    align-content: center;
+  }
   .band:not(.collapsed) .grade-badge button.grade-area > span:first-child { grid-column: 1; grid-row: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-caption); }
-  .band:not(.collapsed) .grade-badge button.grade-area > b, .band:not(.collapsed) .grade-badge button.grade-area.grade-bm > b,
-  .band:not(.collapsed) .grade-badge button.grade-area.grade-roles > .grade-roles-val { grid-column: 1; grid-row: 2; text-align: left; font: italic 800 var(--fs-title)/1 var(--display); }
-  .band:not(.collapsed) .grade-badge button.grade-area > .meter { display: block; grid-column: 1; grid-row: 3; width: 100%; height: 4px; }
+  .band:not(.collapsed) .grade-badge button.grade-area > .meter { display: block; width: 100%; }
   .band:not(.collapsed) .grade-badge button.grade-area > svg { display: none; }
   /* Carte Pedana in piedi come sul computer e sul telefono, tre per riga: il Pokémon sulla sua pedana, sotto il nome
      centrato con l'icona dello strumento, poi i tipi (l'abilità è nel fumetto della carta e nell'editor) */
@@ -1336,9 +1303,6 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .band:not(.collapsed) .slot > .slot-card > .types { display: flex; justify-content: center; gap: var(--sp-2); margin: var(--sp-2) 0 0; }
 }
 /* Tablet stretto in verticale (600–759): le carte in piedi stanno tre per riga anche qui */
-@media (min-width: 600px) and (max-width: 759px) {
-  .band:not(.collapsed) .grade-badge .grade-areas { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
 
 /* ── C · Tablet in orizzontale, e il computer a mezzo schermo (da 900 px col mouse, es. accanto a Showdown): la squadra in
    una colonna a sinistra, la sezione (e l'editor) a destra ── */
@@ -1353,25 +1317,37 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .main > .band > .grade-badge { order: 1; margin: 0; }
   .main > .band > .team { order: 2; display: flex; flex-direction: column; flex: 1 0 auto; }
   /* Il voto compatto: lettera, punteggio e giudizio; sotto le aree in due righe (Offesa, Difesa, Velocità / Ruoli, Bonus/Malus) */
-  .band:not(.collapsed) .grade-badge { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto auto; align-items: center; gap: 0 var(--sp-5);
-    padding: var(--sp-4) var(--sp-5) var(--sp-5); box-shadow: inset 0 0 0 1px var(--line-soft); }
+  .band:not(.collapsed) .grade-badge {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+    align-items: center;
+    box-shadow: inset 0 0 0 1px var(--line-soft);
+  }
   .band:not(.collapsed) .grade-badge .grade-head { display: none; }
-  .band:not(.collapsed) .grade-badge .letter { grid-column: 1; grid-row: 1 / 3; font-size: 48px; }
-  .band:not(.collapsed) .grade-badge .overall { grid-column: 2; grid-row: 1; align-self: end; font-size: var(--fs-title-l); white-space: nowrap; }
+  .band:not(.collapsed) .grade-badge .letter { grid-column: 1; grid-row: 1 / 3; }
+  .band:not(.collapsed) .grade-badge .overall { grid-column: 2; grid-row: 1; align-self: end; white-space: nowrap; }
   .band:not(.collapsed) .grade-badge .label { grid-column: 2; grid-row: 2; align-self: start; font-size: var(--fs-caption); }
   .band:not(.collapsed) .grade-badge:not(.none) .label { flex-direction: row; flex-wrap: wrap; gap: 0 var(--sp-3); }
   .band:not(.collapsed) .grade-badge .grade-tools { top: var(--sp-3); right: var(--sp-3); height: auto; }
-  .band:not(.collapsed) .grade-badge .grade-tools .help-button { width: 30px; height: 30px; color: var(--muted); border-color: var(--line); }
-  .band:not(.collapsed) .grade-badge .grade-areas { grid-column: 1 / -1; grid-row: 3; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--sp-2); margin: var(--sp-4) 0 0; }
+  .band:not(.collapsed) .grade-badge .grade-tools .help-button { color: var(--muted); border-color: var(--line); }
+  .band:not(.collapsed) .grade-badge .grade-areas { grid-column: 1 / -1; grid-row: 3; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--sp-2); margin: var(--sp-4) 0 0; margin-top: var(--sp-3); }
   .band:not(.collapsed) .grade-badge button.grade-area, .band:not(.collapsed) .grade-badge button.grade-area:is(.grade-roles, .grade-bm) {
-    grid-column: span 2; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto 4px; row-gap: 3px; min-height: 0; margin: 0; padding: var(--sp-2) var(--sp-3); border-radius: 3px; background: var(--raised); }
+    grid-column: span 2;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto 4px;
+    min-height: 0;
+    margin: 0;
+    border-radius: 3px;
+    background: var(--raised);
+  }
   .band:not(.collapsed) .grade-badge button.grade-area:is(.grade-roles, .grade-bm) { grid-column: span 3; grid-template-rows: auto; }
   .band:not(.collapsed) .grade-badge button.grade-area > span:first-child { grid-column: 1; grid-row: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-caption); }
   .band:not(.collapsed) .grade-badge button.grade-area > b, .band:not(.collapsed) .grade-badge button.grade-area.grade-bm > b, .band:not(.collapsed) .grade-badge button.grade-area.grade-roles > .grade-roles-val { grid-column: 2; grid-row: 1; text-align: right; }
-  .band:not(.collapsed) .grade-badge button.grade-area > .meter { display: block; grid-column: 1 / -1; grid-row: 2; width: 100%; height: 4px; }
+  .band:not(.collapsed) .grade-badge button.grade-area > .meter { display: block; grid-column: 1 / -1; grid-row: 2; width: 100%; }
   .band:not(.collapsed) .grade-badge button.grade-area > svg { display: none; }
   /* Testata: targa e menu Team; sotto, larga, l'azione principale */
-  .band:not(.collapsed) .team-head { flex-wrap: wrap; row-gap: var(--sp-4); margin: 0 0 var(--sp-5); padding: 0; overflow: visible; }
+  .band:not(.collapsed) .team-head { flex-wrap: wrap; margin: 0 0 var(--sp-5); padding: 0; overflow: visible; row-gap: var(--sp-3); margin-bottom: var(--sp-4); }
   .band:not(.collapsed) .team-head .team-plate { flex: 1 1 0; }
   .band:not(.collapsed) .team-head .team-guide-slot { order: 4; flex: 1 1 100%; margin: 0; }
   .band:not(.collapsed) .team-head .team-guide-slot .team-guide, .band:not(.collapsed) .team-head .fill-anchor { width: 100%; justify-content: center; }
@@ -1427,7 +1403,7 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   /* Ruoli (8/8 +2) e Bonus/Malus hanno più da scrivere: le loro caselle un po' più larghe */
   .band:not(.collapsed) .grade-badge .grade-areas { gap: var(--sp-2); grid-template-columns: repeat(3, minmax(0, 0.88fr)) minmax(0, 1.12fr) minmax(0, 1.25fr); }
   .band:not(.collapsed) .grade-badge button.grade-area, .band:not(.collapsed) .grade-badge button.grade-area:is(.grade-roles, .grade-bm) {
-    grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto 3px; align-content: center; row-gap: 4px; min-height: 0; padding: var(--sp-2) var(--sp-4); }
+    grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto 3px; row-gap: 4px; min-height: 0; padding: var(--sp-2) var(--sp-4); }
   .band:not(.collapsed) .grade-badge button.grade-area:is(.grade-roles, .grade-bm) { grid-template-rows: auto; }
   .band:not(.collapsed) .grade-badge button.grade-area > b, .band:not(.collapsed) .grade-badge button.grade-area.grade-bm > b,
   .band:not(.collapsed) .grade-badge button.grade-area.grade-roles > .grade-roles-val { grid-column: 2; grid-row: 1; text-align: right; font: italic 800 var(--fs-section)/1 var(--display); }
@@ -1440,10 +1416,8 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .band:not(.collapsed) .grade-badge .letter { font-size: 38px; }
   .band:not(.collapsed) .grade-badge .overall { font-size: var(--fs-title); }
   .band:not(.collapsed) .grade-badge .grade-tools .help-button { width: 26px; height: 26px; }
-  .band:not(.collapsed) .grade-badge .grade-areas { margin-top: var(--sp-3); }
   .band:not(.collapsed) .grade-badge button.grade-area, .band:not(.collapsed) .grade-badge button.grade-area:is(.grade-roles, .grade-bm) { row-gap: 2px; padding: 3px var(--sp-3); }
   .band:not(.collapsed) .grade-badge button.grade-area > .meter { height: 3px; }
-  .band:not(.collapsed) .team-head { row-gap: var(--sp-3); margin-bottom: var(--sp-4); }
 }
 /* Tablet stretto in verticale: le aree del voto su due righe (tre e due), come prima */
 @media (min-width: 600px) and (max-width: 759px) {
@@ -1474,13 +1448,23 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .format-dialog .help-head { padding: var(--sp-5) var(--sp-4) var(--sp-5) var(--sp-7); padding-top: max(var(--sp-5), env(safe-area-inset-top)); }
   .format-dialog .help-close { width: 44px; height: 44px; }
   /* Famiglie: tre parti uguali, quella aperta piena (ciano), le altre sul fondo del selettore */
-  .fmt-families { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; margin: var(--sp-5) var(--sp-6) 0; padding: 3px;
-    border: 0; border-radius: 8px; background: var(--field); box-shadow: inset 0 0 0 1px var(--line-soft); }
+  .fmt-families {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    margin: var(--sp-5) var(--sp-6) 0;
+    padding: 3px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--field);
+    box-shadow: inset 0 0 0 1px var(--line-soft);
+    margin-inline: var(--sp-7);
+  }
   .fmt-families label { display: grid; place-items: center; min-height: 40px; padding: 0 var(--sp-2); border-radius: 6px; clip-path: none;
     font-size: var(--fs-caption); text-align: center; }
   .fmt-families label.on { color: var(--on-accent); background: var(--accent); }
   .fmt-families label.active:not(.on) { box-shadow: inset 0 -2px 0 var(--accent); }
-  .fmt-body { gap: var(--sp-7); padding: var(--sp-6) var(--sp-6) var(--sp-8); }
+  .fmt-body { gap: var(--sp-7); padding: var(--sp-6) var(--sp-6) var(--sp-8); padding-inline: var(--sp-7); }
   /* Fonti e giochi: una per riga, il logo a sinistra in un riquadro basso */
   .fmt-sources, .fmt-games { grid-template-columns: minmax(0, 1fr); gap: var(--sp-3); }
   .fmt-sources .fmt-tile, .fmt-games .fmt-tile { grid-template-columns: 84px minmax(0, 1fr); grid-template-rows: auto auto; column-gap: var(--sp-6); align-items: center;
@@ -1503,7 +1487,7 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   .format-dialog .format-gens { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--sp-3); }
   .format-dialog .format-gens label { display: grid; place-items: center; min-height: 44px; padding: 0; }
   /* In fondo: avviso sopra, poi Annulla e Usa metà e metà */
-  .fmt-actions { flex-wrap: wrap; gap: var(--sp-4); padding: var(--sp-5) var(--sp-6); padding-bottom: max(var(--sp-5), env(safe-area-inset-bottom)); }
+  .fmt-actions { flex-wrap: wrap; gap: var(--sp-4); padding: var(--sp-5) var(--sp-6); padding-bottom: max(var(--sp-5), env(safe-area-inset-bottom)); padding-inline: var(--sp-7); }
   .fmt-actions .fmt-warning { flex: 1 1 100%; margin: 0; }
   .fmt-actions button { flex: 1 1 0; justify-content: center; min-width: 0; min-height: 48px; padding: 0 var(--sp-5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .fmt-actions .fmt-main { flex-grow: 1.6; }
@@ -1538,9 +1522,7 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
   /* Il campo vero (la tendina) è dentro il bordo: 46 fuori per averne 44 da toccare */
   .toolbar .team-type { height: 44px; }
   /* Completa team: schede, Impostazioni, Usa e Altre proposte da 44 */
-  .fill-panel .fill-tab { min-height: 44px; }
-  .fill-panel .fill-settings-button, .fill-panel .fill-more { min-height: 44px; }
-  .fill-panel .fill-add { min-height: 44px; }
+  .fill-panel .fill-tab, .fill-panel .fill-settings-button, .fill-panel .fill-more, .fill-panel .fill-add { min-height: 44px; }
   /* Scegli il formato (centrata sul tablet, a tutto schermo sul telefono): famiglie, Lotta, Tier e i pulsanti in fondo da 44 */
   .fmt-families label { display: grid; place-items: center; min-height: 44px; }
   .format-dialog .format-chips label { display: grid; place-items: center; min-height: 44px; min-width: 44px; }
@@ -1549,11 +1531,6 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
 }
 /* Coerenza (controllo 2026-11-21): sul telefono i margini laterali sono 14 ovunque (pagina, fogli, Completa team), anche
    nella finestra del formato; le voci del menu Team alte 52 quando è un foglio (come sul telefono), 44 a tendina */
-@media (max-width: 599px) {
-  .fmt-families { margin-inline: var(--sp-7); }
-  .fmt-body { padding-inline: var(--sp-7); }
-  .fmt-actions { padding-inline: var(--sp-7); }
-}
 @media (min-width: 600px) and (max-width: 1099px) {
   .team-more-sheet[data-sheet] [role='menuitem'] { height: 52px; }
   .team-more-sheet:not([data-sheet]) [role='menuitem'] { height: 44px; }
@@ -1561,8 +1538,7 @@ html.touch-tips .ftip.member[data-tip-sheet] { overflow: visible; max-height: no
 /* Col dito, secondo giro (critique 2026-11-21): le scelte di Completa team (Tipo di team, Condizione, Pokémon preferiti)
    e Migliora i set (la testata della colonna è l'etichetta della casella; Applica, Annulla e Mostra cambiamenti) da 44 */
 @media (pointer: coarse) and (max-width: 1099px) {
-  .fill-types [role='radio'], .fill-styles [role='radio'] { min-height: 44px; }
-  .fill-settings select.fill-favorites { min-height: 44px; }
+  .fill-types [role='radio'], .fill-styles [role='radio'], .fill-settings select.fill-favorites { min-height: 44px; }
   label.improve-col-head { min-height: 44px; cursor: pointer; }
   .improve-actions button { height: 44px; }
   .detail-actions > :is(button, a) { min-height: 44px; min-width: 44px; justify-content: center; }
@@ -1574,7 +1550,6 @@ label.improve-col-head { cursor: pointer; }
   .band.collapsed .slot > .slot-card { height: 52px; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; }
   .band.collapsed .slot.empty { height: 52px; }
   .band.collapsed .slot > .slot-card > .name-line { display: none; }
-  .band.collapsed .slot > .slot-card .mini-icon { margin: 0 auto; max-width: 100%; }
   .band.collapsed .grade-badge .grade-pop-toggle { height: 52px; }
 }
 

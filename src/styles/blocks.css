@@ -1,28 +1,7 @@
-/* Titolo a sinistra; il riassunto allineato a destra, accanto alla freccia, in ogni blocco */
-.block > summary { display: flex; align-items: center; gap: var(--sp-6); font-weight: 600; }
-.block > summary > span:first-child { flex: 1; min-width: 0; }
-.block > summary > span + span { color: var(--muted); font-weight: 500; font-size: var(--fs-section); text-align: right; font-variant-numeric: tabular-nums; }
-.block > summary::after {
-  content: '';
-  flex: none;
-  width: 7px;
-  height: 7px;
-  border-right: 2px solid var(--faint);
-  border-bottom: 2px solid var(--faint);
-  margin-left: auto;
-  transform: rotate(45deg) translateY(-2px);
-  transition: transform 0.2s;
-}
-.block[open] > summary::after { transform: rotate(225deg) translateY(-2px); }
-.block[open] > summary { margin-bottom: var(--sp-4); }
-.block > h3 { margin-bottom: var(--sp-4); }
 .note { font-size: var(--fs-small); color: var(--muted); }
 .note meter { display: inline-block; width: 120px; vertical-align: middle; margin-left: var(--sp-4); }
 .note strong { color: var(--text); }
 
-.rating .grade { display: flex; align-items: baseline; gap: var(--sp-6); margin: 0 0 var(--sp-5); color: var(--muted); }
-/* Il punteggio resta sulla linea della lettera; il triangolo gli sta sopra, come un apostrofo della lettera */
-.rating .grade-side { position: relative; }
 /* "?" accanto al titolo: apre come funziona il voto */
 .help-button { display: inline-grid; place-items: center; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--muted); }
 .help-button .icon { width: 20px; height: 20px; }
@@ -93,21 +72,19 @@
  */
 .help-frame { position: relative; width: min(780px, 100%); }
 .help-frame > .help-dialog { position: relative; z-index: 1; width: 100%; }
-.help-frame.with-peek { --peek: 155px; --peek-room: calc(var(--peek) * 0.9); margin-top: var(--peek-room); }
-/* Come funziona il voto: più alta delle altre, così la pagina generale (lettere, pesi e come si legge il riquadro) non scorre */
-.help-frame.with-peek > .help-dialog.rating-help { height: min(690px, calc(100vh - 48px - var(--peek-room))); max-height: min(690px, calc(100vh - 48px - var(--peek-room))); }
-/* Tutte le guide "Come funziona": la cornice è larga quanto la sua finestra, e la finestra si accorcia dello spazio di Eevee */
-.help-frame.with-peek { width: min(var(--frame-w, 780px), 100%); }
-.help-frame.with-peek:has(> .area-guide) { --frame-w: 980px; }
-.help-frame.with-peek:has(> .tt-dialog) { --frame-w: 600px; }
-.help-frame.with-peek > .help-dialog { max-height: min(620px, calc(100vh - 48px - var(--peek-room))); }
-.help-frame.with-peek > .help-dialog.area-guide { height: min(620px, calc(100vh - 48px - var(--peek-room))); }
 /*
  * La finestra al centro dello schermo, Eevee in più: sotto la cornice lo stesso spazio che c'è sopra per Eevee, finché lo
  * schermo ha posto (altrimenti meno, fino a niente: la finestra non si accorcia per questo). --dlg-h è l'altezza piena
  * della finestra di quella guida.
  */
-.help-frame.with-peek { --dlg-h: 620px; margin-bottom: clamp(0px, calc(100vh - 48px - var(--peek-room) - var(--dlg-h)), var(--peek-room)); }
+.help-frame.with-peek { --peek: 155px; --peek-room: calc(var(--peek) * 0.9); margin-top: var(--peek-room); width: min(var(--frame-w, 780px), 100%); --dlg-h: 620px; margin-bottom: clamp(0px, calc(100vh - 48px - var(--peek-room) - var(--dlg-h)), var(--peek-room)); }
+/* Come funziona il voto: più alta delle altre, così la pagina generale (lettere, pesi e come si legge il riquadro) non scorre */
+.help-frame.with-peek > .help-dialog.rating-help { height: min(690px, calc(100vh - 48px - var(--peek-room))); max-height: min(690px, calc(100vh - 48px - var(--peek-room))); }
+/* Tutte le guide "Come funziona": la cornice è larga quanto la sua finestra, e la finestra si accorcia dello spazio di Eevee */
+.help-frame.with-peek:has(> .area-guide) { --frame-w: 980px; }
+.help-frame.with-peek:has(> .tt-dialog) { --frame-w: 600px; }
+.help-frame.with-peek > .help-dialog { max-height: min(620px, calc(100vh - 48px - var(--peek-room))); }
+.help-frame.with-peek > .help-dialog.area-guide { height: min(620px, calc(100vh - 48px - var(--peek-room))); }
 /* Sul computer, sopra le guide con Eevee, il margine in alto è quasi niente (6 px): Eevee arriva quasi al bordo dello schermo e la finestra sale con lui */
 @media (min-width: 1100px) {
   .help-backdrop:has(> .help-frame.with-peek) { padding-top: var(--sp-3); }
@@ -118,9 +95,8 @@
 @media (max-width: 599px), (max-height: 700px) { .help-frame.with-peek { --peek: 110px; } }
 .eevee-peek { position: absolute; top: 0; left: 40px; width: var(--peek); pointer-events: none; user-select: none; }
 .eevee-peek img { position: absolute; display: block; }
-.eevee-peek .peek-head { position: absolute; left: 0; top: calc(var(--peek) * -0.914); width: var(--peek); z-index: 0; transform-origin: 50% 100%; }
 /* La testa si può cliccare (fa saltare Eevee); il resto di Eevee lascia passare i clic */
-.eevee-peek .peek-head { pointer-events: auto; cursor: pointer; }
+.eevee-peek .peek-head { position: absolute; left: 0; top: calc(var(--peek) * -0.914); width: var(--peek); z-index: 0; transform-origin: 50% 100%; pointer-events: auto; cursor: pointer; }
 /* I pezzi della testa stanno uno sopra l'altro, nello stesso riquadro; la faccia dà la misura */
 .eevee-peek .peek-head img { left: 0; top: 0; width: 100%; }
 /* La faccia resta nel flusso (dà l'altezza) ma è posizionata anche lei: così i pezzi si dipingono nell'ordine della pagina (orecchi e collare dietro, faccia, poi le facce del battito e del colpo) e il collare non passa mai davanti al mento */
@@ -306,7 +282,7 @@
    * la finestra raddrizzandosi; 0,4 s come RETREAT_MS in EeveePeek.tsx.
    */
   .eevee-peek.at-side.retreat { animation: peek-side-out 0.4s both; }
-  .eevee-peek.at-side.retreat .peek-head { animation: none; }
+  .eevee-peek.at-side.retreat .peek-head,
   .eevee-peek.at-side.retreat .peek-head .peek-blink, .eevee-peek.at-side.retreat .peek-head .peek-happy { animation: none; }
   .eevee-peek.at-side.retreat .peek-head .peek-giggle { opacity: 1; }
   .eevee-peek.at-side.retreat .peek-ear.up { animation: peek-ear-up-out 0.08s ease-out both; }
@@ -419,7 +395,11 @@
 .help-dialog.improve-dialog.open { width: min(1360px, 100%); max-height: calc(100vh - 24px); }
 .help-backdrop:has(> .improve-dialog.open) { padding: var(--sp-6); }
 @media (prefers-reduced-motion: reduce) { .help-dialog.improve-dialog { transition: none; } }
-.improve-body { flex: 1; min-height: 0; overflow-y: auto; padding: var(--sp-7) var(--sp-9) var(--sp-1); }
+
+/* Migliora i set (critique 2026-11-21): le colonne secondo la larghezza vera della finestra, non dello schermo (sul tablet
+   la finestra è larga 720 anche su uno schermo da 1024: sei colonne da 107px tagliavano nomi, EV e strumenti).
+   Sotto i 1000px tre colonne per due righe, sotto i 480 una sola */
+.improve-body { flex: 1; min-height: 0; overflow-y: auto; padding: var(--sp-7) var(--sp-9) var(--sp-1); container: improve / inline-size; }
 .improve-text { margin: 0 0 var(--sp-7); font-size: var(--fs-body); line-height: 1.45; }
 
 /* Il risultato: voto prima → dopo nei colori della lettera, con il velo del voto nuovo come la carta del Voto */
@@ -478,7 +458,7 @@
 
 /* Il set di adesso (spento), "↓ Dopo" e il set nuovo: righe fisse, alla stessa altezza in tutte le colonne */
 .improve-set { display: grid; gap: var(--sp-1); padding: var(--sp-4) var(--sp-5); font-size: var(--fs-small); line-height: 1.4; color: var(--muted); }
-.improve-set.is-after { flex: 1; color: var(--text); }
+.improve-set.is-after { flex: 1; color: var(--text); background: color-mix(in srgb, var(--raised) 30%, transparent); }
 .improve-line { display: block; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .improve-set .item-icon { vertical-align: -4px; }
 .improve-evs { font-variant-numeric: tabular-nums; }
@@ -497,7 +477,6 @@
   font: 800 var(--fs-caption)/1 var(--display); font-style: italic; letter-spacing: 0.08em; text-transform: uppercase;
 }
 .improve-down .icon { width: 16px; height: 16px; transform: rotate(90deg); }
-.improve-set.is-after { background: color-mix(in srgb, var(--raised) 30%, transparent); }
 .improve-same { display: flex; align-items: center; justify-content: center; gap: var(--sp-3); flex: 1; margin: 0; padding: var(--sp-7) var(--sp-5); color: var(--muted); font-size: var(--fs-small); text-align: center; }
 .improve-same .icon { width: 15px; height: 15px; color: var(--good); }
 
@@ -542,11 +521,6 @@
   .improve-down { height: 22px; }
   .improve-total { min-height: 44px; padding-block: 5px; }
 }
-
-/* Migliora i set (critique 2026-11-21): le colonne secondo la larghezza vera della finestra, non dello schermo (sul tablet
-   la finestra è larga 720 anche su uno schermo da 1024: sei colonne da 107px tagliavano nomi, EV e strumenti).
-   Sotto i 1000px tre colonne per due righe, sotto i 480 una sola */
-.improve-body { container: improve / inline-size; }
 @container improve (max-width: 999px) {
   .improve-cols { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .improve-mini { display: none; }

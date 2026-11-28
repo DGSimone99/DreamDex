@@ -105,7 +105,7 @@
 .ct-tile.warn .ct-tile-pct { color: var(--warn); }
 .ct-tile.bad .ct-tile-pct { color: var(--bad); }
 .ct-tile-pct i { font-size: var(--fs-caption); color: var(--muted); }
-.ct-tile-best { position: absolute; right: 0; bottom: 8px; pointer-events: none; }
+.ct-tile-best { position: absolute; bottom: 8px; pointer-events: none; right: 3px; }
 
 /* Il foglio di un tipo: i 6 membri, ognuno con la mossa, l'efficacia e il danno nel colore della casella del computer */
 .an-sheet-lead .ti-sq { width: 32px; height: 32px; }
@@ -116,7 +116,7 @@
 .ct-sheet-rows { margin: 0; padding: 0; list-style: none; }
 .ct-sheet-row { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto 26px 56px; align-items: center; gap: var(--sp-3); min-height: 46px; border-bottom: 1px solid var(--line-soft); }
 .ct-sheet-row .eff-tag { position: static; justify-self: center; }
-.ct-sheet-name { font: 700 var(--fs-small)/1.2 var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ct-sheet-name { font: 700 var(--fs-small)/1.2 var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: grid; }
 .ct-sheet-move { font: 500 var(--fs-caption)/1.2 var(--ui); color: var(--muted); text-align: right; }
 .ct-sheet-pct { grid-column: 5; text-align: right; font: 800 italic var(--fs-title-l)/1 var(--display); font-variant-numeric: tabular-nums; }
 .ct-sheet-pct i { font-size: var(--fs-caption); color: var(--muted); }
@@ -170,8 +170,7 @@
   .area-panel > .panel-switch { margin-top: calc(-1 * var(--sp-6)); margin-bottom: 0; }
   .cm-cards-frame { gap: var(--sp-5); }
   .cm-cards-bar { column-gap: var(--sp-4); row-gap: var(--sp-2); }
-  .cm-cards-bar .cards-legend { column-gap: var(--sp-4); }
-  .cm-cards-bar .cards-legend > .cards-legend-keys { column-gap: var(--sp-4); }
+  .cm-cards-bar .cards-legend, .cm-cards-bar .cards-legend > .cards-legend-keys { column-gap: var(--sp-4); }
   .cm-cards-bar .cards-legend i { width: 12px; }
 
   .og-cards.cm-cards { grid-template-columns: minmax(0, 1fr); gap: var(--sp-2); }
@@ -196,8 +195,16 @@
     translate: calc(-50% + var(--feet-dx, 0) * var(--row-s)) 0; bottom: calc(3px - (var(--feet-dy, 0) + 10 / 96) * var(--row-s)); }
   .cm-card .og-card-name { grid-column: 3; grid-row: 1; font: 800 italic var(--fs-title-s)/1.1 var(--display); text-align: left; }
   /* #N in testa al nome, come una classifica */
-  .cm-card .og-card-tag.cm-card-rank { position: static; grid-column: 2; grid-row: 1; clip-path: none; padding: 0; background: none;
-    font: 800 italic var(--fs-small)/1 var(--display); color: var(--muted); min-width: 24px; }
+  .cm-card .og-card-tag.cm-card-rank {
+    position: static;
+    grid-column: 2;
+    grid-row: 1;
+    clip-path: none;
+    padding: 0;
+    background: none;
+    font: 800 italic var(--fs-small)/1 var(--display);
+    min-width: 24px;
+  }
   .cm-card .og-card-types { position: static; grid-column: 4; grid-row: 1; flex-direction: row; gap: 3px; }
   .cm-card .og-card-types .ti-sq { width: 18px; height: 18px; }
   /* La barra dei 6 sotto, dal #N al bordo destro; solo da leggere, il tocco va alla riga */
@@ -213,7 +220,7 @@
   .cm-card .kob-count { flex-direction: row; align-items: baseline; min-width: 36px; justify-content: flex-end; }
   .cm-card .kob-count-line { display: none; }
   .cm-card .kob-count-num > b { font-size: var(--fs-title-s); }
-  .cm-card .kob-count-num > small { font-size: var(--fs-caption); color: var(--muted); }
+  .cm-card .kob-count-num > small { font-size: var(--fs-caption); }
   /* Il conto n/6 nel colore della minaccia (come il filo): rosso nessuno, giallo uno, verde da due */
   .cm-card.bad .kob-count { --c: var(--bad); }
   .cm-card.warn .kob-count { --c: var(--warn); }
@@ -308,7 +315,6 @@
 /* Nel foglio le barre portano alla sottoscheda: pezzi alti (40 px) da toccare col dito */
 .og-sheet-sec .kob-row > .kob { height: 44px; }
 /* Nei fogli delle minacce la mossa del colpo sotto il nome */
-.ct-sheet-name { display: grid; }
 .ct-sheet-sub { font: 500 var(--fs-caption)/1.2 var(--ui); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Sulle righe colorate (rossa, gialle, verde) il grigio non basta (sotto 4,5:1): la mossa e il "%" prendono il chiaro del testo */
 .ct-sheet-row:is(.hold-ohko, .hold-2, .hold-3, .hold-4, .ko-ohko, .ko-two, .ko-three) :is(.ct-sheet-sub, .ct-sheet-move) { color: color-mix(in srgb, var(--text) 85%, transparent); }
@@ -319,12 +325,11 @@
 /* "Priorità" sulla carta della Velocità: col dito si tocca su 44 px (apre la sua spiegazione) */
 @media (pointer: coarse) { .sp-card-prio::after { content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: 44px; translate: -50% -50%; } }
 /* Le tessere dei tipi: la mini icona dentro la tessera (prima sporgeva di 2 px) */
-.ct-tile-best { right: 3px; }
 .ct-tile-best .mon-icon { margin-right: 0; }
 
 /* ── Recupero a carte: la risposta del team in cima, poi un membro per riga (nome, valore, netto, solo le fonti vere) ── */
 .sus-hero-rocks { margin: 0; font: 500 var(--fs-small)/1.35 var(--ui); color: var(--muted); }
-.sus-cards { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-4); margin: 0; padding: 0; list-style: none; }
+.sus-cards { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-4); margin: 0; padding: 0; list-style: none; align-items: start; }
 @container (min-width: 560px) { .sus-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .sus-card { display: grid; gap: var(--sp-4); padding: var(--sp-4) var(--sp-6) var(--sp-6); border-radius: var(--alt-r); background: var(--panel); box-shadow: inset 0 0 0 1px var(--line-soft); }
 .sus-card-head { display: flex; align-items: center; gap: var(--sp-3); min-width: 0; }
@@ -344,7 +349,6 @@
 .sus-pill.bad { background: var(--bad-bg); color: var(--text); }
 .sus-pill.bad b { color: var(--bad); }
 .og-hero-line b.plain { font-size: 30px; color: var(--text); }
-.sus-cards { align-items: start; }
 /* Difesa a carte: quattro pezzi (4HKO+, 3HKO, 2HKO, OHKO) nella barra stretta della carta, minimo più basso e numero più
    piccolo, così stanno anche a 360px (4 × 15 + 3 × 2 = 66px) */
 .og-card .kob-row:has(> .kob.hb) { gap: 2px; }

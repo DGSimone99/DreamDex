@@ -49,17 +49,6 @@
 .help-weights-row .help-inactive-note { font-size: var(--fs-caption); font-weight: 400; color: var(--muted); }
 /* Il tipo del team nella lista degli argomenti: una piccola scritta "il tuo team" in ciano, non un pallino da indovinare */
 .help-nav .help-yours-tag { margin-left: var(--sp-4); font: 600 var(--fs-label)/1 var(--ui); letter-spacing: 0.02em; color: var(--accent-ink); white-space: nowrap; }
-.rating .grade .grade-alert { position: absolute; left: -1.5px; bottom: 100%; margin-bottom: 1px; padding: 0; } /* -1.5px: margine interno del disegno */
-.rating .grade .grade-alert .icon { width: 18px; height: 18px; }
-.rating .grade .grade-alert .alert-pop { font: 400 var(--fs-small)/1.45 var(--ui); color: var(--text); text-transform: none; letter-spacing: 0; }
-.rating .grade > strong { font: 700 var(--fs-score)/1 var(--display); color: var(--accent); }
-.rating .grade-C > strong { color: var(--warn); }
-.rating .grade-D > strong { color: var(--bad); }
-.rating .bars { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-5) 20px; margin: 0 0 var(--sp-4); }
-.rating .bars dt { font-size: var(--fs-small); color: var(--muted); margin-bottom: var(--sp-2); }
-/* Le schede raggiunte dai link non finiscono sotto la barra in alto */
-.analysis details.block { scroll-margin-top: 80px; }
-.rating .bars dd { margin: 0; }
 
 /*
  * Bonus/Malus (BonusMalusView): in alto a sinistra la carta dei core a tre (due affiancati, aperti tutti e due; a
@@ -161,9 +150,17 @@
 /* La carta dei core (come le carte della Panoramica): stessa misura con 0, 1 o 2 core. Una superficie sola: con almeno
    un core lavata di verde; i due core sono due parti della stessa carta, divise da una riga sottile */
 .bm-cores.dash-card {
-  --cores-h: 168px; position: relative; grid-area: cores; align-self: start; height: var(--cores-h); padding: 0; overflow: visible;
+  --cores-h: 168px;
+  position: relative;
+  grid-area: cores;
+  align-self: start;
+  height: var(--cores-h);
+  padding: 0;
+  overflow: visible;
   background: linear-gradient(115deg, color-mix(in srgb, var(--good-bg) 70%, var(--panel)) 0%, var(--panel) 60%);
-  border-color: color-mix(in srgb, var(--good) 22%, var(--line-soft)); box-shadow: 0 6px 14px rgb(0 0 0 / 0.28);
+  border-color: color-mix(in srgb, var(--good) 22%, var(--line-soft));
+  box-shadow: 0 6px 14px rgb(0 0 0 / 0.28);
+  animation: none;
 }
 .bm-cores.dash-card.none { background: var(--panel); border-color: var(--line-soft); }
 /* La targhetta del titolo parte da sotto la medaglia: medaglia e targhetta sono un pezzo solo */
@@ -173,7 +170,7 @@
 .bm-cores .dash-meta b.good { color: var(--good); }
 /* La medaglia del core grande come quelle delle voci, appuntata a cavallo della barra del titolo */
 .bm-head-medal.bm-medal { position: absolute; left: -14px; top: -16px; z-index: 1; width: 54px; height: 61px; }
-.bm-core-row { flex: 1; min-height: 0; display: flex; margin: 0; padding: 0; list-style: none; }
+.bm-core-row { flex: 1; min-height: 0; display: flex; margin: 0; padding: 0; list-style: none; --pair-min: 785px; }
 .bm-core {
   position: relative; display: flex; align-items: center; gap: var(--sp-8); min-width: 0; overflow: hidden;
   flex: 1 1 calc(var(--tri-w, 150px) + 34px); padding: var(--sp-4) var(--sp-8) var(--sp-4) var(--sp-9);
@@ -183,7 +180,6 @@
 .bm-core.shut { flex-grow: 0; flex-direction: column; justify-content: center; gap: var(--sp-2); padding: var(--sp-3) var(--sp-7); background: rgb(0 0 0 / 0.12); }
 .bm-core + .bm-core, .bm-core-ghost { border-left: 1px solid color-mix(in srgb, var(--good) 22%, var(--line-soft)); }
 /* La carta dei core non entra con l'animazione della Panoramica: in questa scheda si muovono solo le medaglie */
-.bm-cores.dash-card { animation: none; }
 .bm-core-art { flex: none; display: flex; padding: 0; background: none; border: 0; color: inherit; font: inherit; }
 .bm-core.shut .bm-core-art { flex-direction: column; align-items: center; gap: var(--sp-2); cursor: pointer; filter: brightness(0.85); }
 /* Tutta la carta chiusa si clicca */
@@ -216,12 +212,10 @@
 /* Due posti affiancati (usePairFits): due core aperti, o un core e il posto del secondo, metà carta ciascuno, col
    triangolo medio. --pair-min è la larghezza della carta sotto cui non stanno (bordi + triangolo + spazio + testo da
    230px, per due): due core vanno a fisarmonica, un core solo prende tutta la carta */
-.bm-core-row { --pair-min: 785px; }
-.bm-core-row.pair .bm-core { flex: 1 1 0; transition: none; }
+.bm-core-row.pair .bm-core { flex: 1 1 0; transition: none; gap: var(--sp-6); padding-right: var(--sp-6); }
 .bm-core-row.pair .bm-core-body { flex: 1 1 auto; min-width: 0; }
 .bm-core-row.pair .sum-tri { --tri-w: 100px; --tri-badge: calc(var(--ti-chip) + 3px); }
 /* Affiancati il nome del core, "Reggono N/18" e i punti stanno su una riga anche coi tipi dai nomi lunghi */
-.bm-core-row.pair .bm-core { gap: var(--sp-6); padding-right: var(--sp-6); }
 .bm-core-row.pair .bm-core-body h5 { gap: var(--sp-4); }
 .bm-core-row:not(.two) .bm-core { max-width: none; }
 /* Un core solo: dove starebbe il secondo, il suo posto tratteggiato e quanto varrebbe */

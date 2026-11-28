@@ -76,17 +76,16 @@
  * Righe a strisce (una sì e una no un po' più chiara), angoli alternati piccoli; la riga attiva prende il bordo ciano e il
  * triangolino a sinistra, come la freccia della riga scelta in Champions.
  */
-.stat-rows { display: grid; gap: 3px; margin-top: var(--sp-2); }
+.stat-rows { display: grid; gap: 3px; margin-top: var(--sp-2); --ev-h: 6px; --ev-fill: color-mix(in srgb, var(--accent) 45%, var(--panel)); }
 .stat-row { display: grid; grid-template-columns: 86px 14px 52px minmax(0, 1fr) 58px 44px; align-items: center; gap: var(--sp-5); padding: var(--sp-1) var(--sp-5) var(--sp-1) var(--sp-4); border-radius: var(--alt-r-sm); }
 /* Icona della statistica (come in Champions) prima del nome */
 .stat-name { display: inline-flex; align-items: center; gap: var(--sp-2); }
 /* I simboli delle statistiche grandi e attaccati al nome, come nel riepilogo di Pokémon Champions */
 .stat-name .stat-icon { flex: none; width: 18px; height: 18px; }
 /* Intestazione: STATS sopra il valore, EV sopra barra e numero insieme, IV sopra il suo campo */
-.stat-row.stat-head { padding-top: 0; padding-bottom: 0; font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.stat-row.stat-head { padding-top: 0; padding-bottom: 0; font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); position: relative; z-index: 3; }
 .stat-row.stat-head:hover { background: none; }
 /* L'intestazione sta sopra le righe: i fumetti di EV e IV coprono le righe sotto, non il contrario */
-.stat-row.stat-head { position: relative; z-index: 3; }
 .stat-head-ev { grid-column: span 2; text-align: center; }
 /* Il valore e la barra: un po' d'aria fra il numero grande e l'inizio della barra */
 .stat-row:not(.stat-head) .ev-slider { margin-left: var(--sp-4); width: calc(100% - var(--sp-4)); }
@@ -104,7 +103,6 @@
  * Sulla riga attiva il riempimento si accende e compare la tacca bianca per trascinare; l'input resta alto 22px, così si
  * prende bene col mouse.
  */
-.stat-rows { --ev-h: 6px; --ev-fill: color-mix(in srgb, var(--accent) 45%, var(--panel)); }
 .stat-row:is(:hover, :focus-within) { --ev-fill: var(--accent); }
 .ev-slider::-webkit-slider-runnable-track {
   height: var(--ev-h);
@@ -142,7 +140,7 @@
 .stat-row .ev-input, .stat-row .iv-input { background: color-mix(in srgb, var(--field) 85%, transparent); border-color: var(--line); transition: border-color 0.15s var(--ease); }
 .stat-row:is(:hover, :focus-within) :is(.ev-input, .iv-input) { border-color: var(--control-line); }
 /* EV a 0 spenti; IV a 31 senza casella (solo il numero, tenue): la casella torna sulla riga attiva */
-.set-editor .stat-row .ev-input.zero:not(:focus) { color: var(--faint); }
+.set-editor .stat-row .ev-input.zero:not(:focus) { color: var(--faint); background: transparent; border-color: transparent; }
 .stat-row .iv-input.max { background: transparent; border-color: transparent; color: var(--faint); }
 .stat-row:is(:hover, :focus-within) .iv-input.max { border-color: var(--line); color: var(--muted); }
 .stat-row :is(.ev-input, .iv-input):focus { border-color: var(--accent); }
@@ -169,17 +167,15 @@
 /* Le colonne dell'intestazione cadono su quelle delle righe: EV e barra sopra i cursori, "2 liberi" alla fine della barra,
    508 / 510 al centro sopra le caselle degli EV (l'ultima colonna è larga quanto loro) */
 .stat-head .ev-total .ev-used { grid-column: 4; grid-row: 1; justify-self: center; }
-.stat-head .ev-total.over .ev-left { grid-column: 2 / 4; justify-self: start; }
+.stat-head .ev-total.over .ev-left { justify-self: start; grid-column: 1 / 4; min-width: 0; font-weight: 600; }
 .stat-head .ev-total strong { font-size: var(--fs-section); }
 .stat-head .ev-total .ev-head { font: 700 var(--fs-caption)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
-.ev-total { display: flex; align-items: center; gap: var(--sp-4); margin: 0 0 0 var(--sp-3); font-size: var(--fs-small); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ev-total { display: flex; align-items: center; gap: var(--sp-4); margin: 0 0 0 var(--sp-3); font-size: var(--fs-small); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; min-width: 0; }
 .ev-total strong { font: 700 var(--fs-title-s)/1 var(--display); color: var(--text); }
 .ev-total .ev-used { display: inline-flex; align-items: baseline; gap: var(--sp-1); }
-.ev-total .ev-left { color: var(--faint); }
+.ev-total .ev-left { color: var(--faint); overflow: hidden; text-overflow: ellipsis; }
 .ev-total.over strong, .ev-total.over .ev-left { color: var(--bad); }
 /* Oltre il massimo la barretta lascia il posto al messaggio (590 / 510 · 80 di troppo: voto bloccato) */
-.ev-total { min-width: 0; }
-.ev-total .ev-left { overflow: hidden; text-overflow: ellipsis; }
 /* Spread sulla fascia delle Statistiche, a destra, come Custom Skillset su quella del Set: "Spread 2° · 14% ▾", piccolo;
    l'elenco si apre sotto, allineato a destra. (La fascia sta 25px sopra il primo contenuto del riquadro) */
 /* Alta e in riga quanto la fascia (il riquadro di un fieldset parte sotto la legenda: -25px è la cima della fascia) */
@@ -403,21 +399,20 @@
 /* Tera nella testata, accanto a nome e tipi: una targhetta corta (testa TERA, la pastiglia del tipo) */
 .editor-tera { flex: none; width: 196px; }
 .editor-tera .field-label { padding-right: var(--sp-7); }
-.set-editor .editor-tera .combobox input { height: 32px; }
-.editor-tera .set-plate { height: 32px; }
+.set-editor .editor-tera .combobox input, .editor-tera .set-plate { height: 32px; }
 /*
  * Natura sotto le righe delle statistiche, centrata, a rombo come in Champions: le punte < e > ai lati e la testa NATURA
  * che finisce a "<". Stessi colori delle targhette; cambia solo la forma, perché la natura cambia le statistiche di sopra.
  * Il filo segue la forma (drop-shadow, non il bordo che il ritaglio taglierebbe).
  */
 /* Più aria sopra (stacca la natura dalla tabella) che sotto (resta vicina alla riga della Velocità, il piede) */
-.nature-diamond { --nd-tip: 14px; position: relative; display: flex; justify-content: center; margin: var(--sp-8) 0 var(--sp-6); }
+/* Il rombo (e il suo menu che si apre verso l'alto) sta sopra l'intestazione delle Statistiche */
+.nature-diamond { --nd-tip: 14px; position: relative; display: flex; justify-content: center; margin: var(--sp-8) 0 var(--sp-6); filter: drop-shadow(0 0 0.5px var(--control-line)) drop-shadow(0 0 0.5px var(--control-line)); --nd-head: 94px; z-index: 4; }
 .nature-diamond .set-plate { position: relative; isolation: isolate; width: min(100%, 340px); padding: 0 var(--nd-tip) 0 0; border-radius: 0; box-shadow: none; background: none; }
 /* La forma sta in un livello sotto il contenuto: ritagliare la targhetta taglierebbe anche il menu che si apre */
 .nature-diamond .set-plate::before { content: ''; position: absolute; inset: 0; z-index: -1;
   clip-path: polygon(var(--nd-tip) 0, calc(100% - var(--nd-tip)) 0, 100% 50%, calc(100% - var(--nd-tip)) 100%, var(--nd-tip) 100%, 0 50%);
   background: linear-gradient(90deg, var(--raised), var(--fade-end) 60%, var(--raised)); }
-.nature-diamond { filter: drop-shadow(0 0 0.5px var(--control-line)) drop-shadow(0 0 0.5px var(--control-line)); }
 .nature-diamond:hover { filter: drop-shadow(0 0 0.5px var(--text)) drop-shadow(0 0 0.5px var(--control-line)); }
 .nature-diamond:focus-within { filter: none; }
 /* Selezionata: un anello ciano di 2px che segue il rombo (un livello sotto la forma, 2px più largo), non il rettangolo
@@ -427,8 +422,15 @@
 .nature-diamond:focus-within .set-plate::after { opacity: 1; }
 .nature-diamond .set-plate:is(:focus-within, :has(input:focus-visible)) { box-shadow: none; }
 .nature-diamond .combobox input:focus-visible { outline: none; }
-.nature-diamond .set-plate > .field-label { margin: 0; padding: 0 calc(var(--sp-7) + 4px) 0 calc(var(--nd-tip) + var(--sp-3)); border-radius: 0;
-  clip-path: polygon(var(--nd-tip) 0, 100% 0, calc(100% - 10px) 50%, 100% 100%, var(--nd-tip) 100%, 0 50%); }
+.nature-diamond .set-plate > .field-label {
+  margin: 0;
+  padding: 0 calc(var(--sp-7) + 4px) 0 calc(var(--nd-tip) + var(--sp-3));
+  border-radius: 0;
+  clip-path: polygon(var(--nd-tip) 0, 100% 0, calc(100% - 10px) 50%, 100% 100%, var(--nd-tip) 100%, 0 50%);
+  flex: none;
+  width: var(--nd-head);
+  box-sizing: border-box;
+}
 .nature-diamond .combobox input { text-align: left; font-size: var(--fs-section); }
 
 /*
@@ -436,7 +438,7 @@
  * Natura, e il piede della Velocità più alto (36px) così la frase non è schiacciata sul bordo. Sugli schermi bassi gli
  * stessi rapporti, più stretti.
  */
-.set-editor fieldset.evs { padding-top: var(--sp-8); }
+.set-editor fieldset.evs { padding-top: var(--sp-8); container: stats / inline-size; }
 .set-editor .evs .speed-line { min-height: 36px; }
 @media (min-width: 1100px) and ((max-width: 1279px) or (max-height: 799px)) {
   .set-editor fieldset.evs { padding-top: var(--sp-5); }
@@ -452,14 +454,12 @@
 .head-help.end .help-bubble { left: auto; right: 0; }
 .nature-diamond > .help-bubble { top: auto; bottom: calc(100% + 6px); left: calc(50% - 170px); }
 /* Zeri quieti: a 0 EV niente casella (come gli IV a 31), torna sulla riga attiva */
-.set-editor .stat-row .ev-input.zero:not(:focus) { background: transparent; border-color: transparent; }
 .stat-row:is(:hover, :focus-within) .ev-input.zero { background: color-mix(in srgb, var(--field) 85%, transparent); border-color: var(--control-line); }
 /* Tastiera: scrivendo in una casella EV, una freccetta ciano indica l'IV della riga (ci si arriva con →), che torna in casella */
 .stat-row:has(.ev-input:focus)::after { content: '›'; position: absolute; top: 50%; right: calc(var(--sp-5) + 44px + var(--sp-5) / 2);
   transform: translate(50%, -55%); font: 700 16px/1 var(--display); color: var(--accent); pointer-events: none; }
 .stat-row:has(.ev-input:focus) .iv-input.max { border-color: var(--control-line); color: var(--text); }
 /* Il riquadro delle Statistiche misura sé stesso: stretto (sotto 560px), lo Spread scrive solo "2°" */
-.set-editor fieldset.evs { container: stats / inline-size; }
 .spread-toggle .sp-narrow { display: none; }
 @container stats (max-width: 559px) {
   .spread-toggle .sp-wide { display: none; }
@@ -472,13 +472,11 @@
   .set-editor .evs > legend:not(.visually-hidden) { width: auto; margin: 0 auto 0 var(--sp-6); padding-right: var(--sp-10); text-align: left; }
 }
 @container stats (max-width: 419px) {
-  .stat-row:not(.stat-head) .ev-slider { visibility: hidden; }
-  .stat-head .ev-total .ev-head { visibility: hidden; }
+  .stat-row:not(.stat-head) .ev-slider, .stat-head .ev-total .ev-head { visibility: hidden; }
   .speed-line-hint { display: none; }
 }
 /* Oltre 510: "250 di troppo" in rosso sopra i cursori (la frase intera nel tooltip), al posto della scritta EV */
 .stat-head .ev-total.over .ev-head { display: none; }
-.stat-head .ev-total.over .ev-left { grid-column: 1 / 4; min-width: 0; font-weight: 600; }
 /* Caselle EV e IV senza le frecce del browser (finivano quasi sul numero, staccate dal bordo): si cambia scrivendo, con
    le frecce della tastiera o col cursore */
 .stat-row :is(.ev-input, .iv-input)::-webkit-inner-spin-button, .stat-row :is(.ev-input, .iv-input)::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
@@ -494,15 +492,11 @@
  * targhetta. Testa a larghezza fissa (--nd-head) per sapere dove cade il nome: 1px di bordo + 4px del menu + 10px della riga
  * stanno prima della colonna, 6px dopo la testa prima del valore.
  */
-.nature-diamond { --nd-head: 94px; }
-.nature-diamond .set-plate > .field-label { flex: none; width: var(--nd-head); box-sizing: border-box; }
 /* Il menu parte dal bordo sinistro del rombo (indietro quanto la testa) e arriva al destro (avanti quanto la punta) */
 .nature-diamond .combobox .option-head { display: grid; grid-template-columns: calc(var(--nd-head) + 6px - 15px) minmax(0, 1fr) auto; column-gap: 0; }
 .nature-diamond .combobox .option-head > strong { grid-column: 2; grid-row: 1; }
 .nature-diamond .combobox .option-head > .option-detail { grid-column: 3; grid-row: 1; }
 .nature-diamond .combobox .option-head > .common-share { grid-column: 1; grid-row: 1; justify-self: start; min-width: 0; margin: 0; text-align: left; }
-/* Il rombo (e il suo menu che si apre verso l'alto) sta sopra l'intestazione delle Statistiche */
-.nature-diamond { z-index: 4; }
 
 /*
  * Natura aperta: il rombo resta intero e la tendina parte dalle sue punte < >. È larga da punta a punta (quanto l'anello
@@ -511,12 +505,15 @@
  * La natura scelta (solo nel campo, evidenziata) è come l'ultima voce della lista (la prima se si apre sotto).
  */
 .nature-diamond .set-plate[data-pop-side]::before { background: linear-gradient(90deg, var(--raised), var(--accent-soft) 45%, var(--accent-soft) 75%, var(--raised)); }
-.nature-diamond .combobox [role='listbox'] { --notch: calc(var(--anchor-h, 34px) / 2 + 2px); border: 2px solid var(--accent); }
+.nature-diamond .combobox [role='listbox'] {
+  --notch: calc(var(--anchor-h, 34px) / 2 + 2px);
+  border: 2px solid var(--accent);
+  background:
+  linear-gradient(90deg, color-mix(in srgb, var(--raised) 75%, var(--ground)), color-mix(in srgb, var(--raised) 45%, var(--ground)) calc(var(--nd-head) - 14px), var(--ground) calc(var(--nd-head) - 2px)) no-repeat,
+  var(--ground);
+}
 /* La colonna sotto la testa NATURA continua la testa nella lista (più chiara, sfuma verso destra): i nomi delle nature
    partono alla stessa x di quella scelta nel campo, e lo spazio a sinistra non resta un vuoto; le quote d'uso ci stanno dentro */
-.nature-diamond .combobox [role='listbox'] { background:
-  linear-gradient(90deg, color-mix(in srgb, var(--raised) 75%, var(--ground)), color-mix(in srgb, var(--raised) 45%, var(--ground)) calc(var(--nd-head) - 14px), var(--ground) calc(var(--nd-head) - 2px)) no-repeat,
-  var(--ground); }
 .nature-diamond .combobox [role='listbox'][data-side='above'] { border-bottom: 0; border-radius: 4px 4px 0 0; padding: var(--sp-2) var(--sp-2) var(--notch);
   clip-path: polygon(0 0, 100% 0, 100% 100%, calc(100% - var(--nd-tip)) calc(100% - var(--notch)), var(--nd-tip) calc(100% - var(--notch)), 0 100%); }
 .nature-diamond .combobox [role='listbox'][data-side='below'] { border-top: 0; border-radius: 0 0 4px 4px; padding: var(--notch) var(--sp-2) var(--sp-2);

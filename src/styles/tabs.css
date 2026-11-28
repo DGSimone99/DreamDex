@@ -57,11 +57,3 @@
 .tab-panel:not(.active) { display: none; }
 /* Il titolo della sezione lo dice già la scheda */
 .tab-panel .analysis > h2 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-
-.block {
-  background: var(--panel);
-  border: 1px solid var(--line-soft);
-  border-radius: 6px;
-  padding: var(--sp-6) var(--sp-8);
-  margin-bottom: var(--sp-5);
-}

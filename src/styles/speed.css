@@ -8,14 +8,13 @@
 .def-frame .def-members tbody tr.sp-scale > * { background: none; }
 .sp-general .def-members thead th:nth-child(2) { text-align: left; }
 /* La testata della colonna delle barre: a sinistra cosa dice la barra, a destra "Velocità" sopra il totale (stessa griglia del bottone) */
-.sp-head { display: grid; grid-template-columns: minmax(0, 1fr) var(--sp-val) 18px; gap: var(--sp-6); padding-right: var(--sp-2); }
+.sp-head { display: grid; grid-template-columns: minmax(0, 1fr) var(--sp-val) 18px; gap: var(--sp-6); padding-right: var(--sp-2); align-items: end; }
 .sp-head > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .sp-head-val { text-align: right; }
 /* Sopra le barre la fascia di Pokémon Champions, come Tipi e Meta in Offesa e Difesa; il numero a destra resta scritto */
 .sp-head > span:first-child { position: relative; display: block; padding: 7px 0 6px; text-align: center; color: var(--text);
   background: linear-gradient(90deg, transparent, var(--champ-band) 25%, var(--champ-band) 75%, transparent); }
 .sp-head > span:first-child::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--control-line), transparent); }
-.sp-head { align-items: end; }
 .sp-bar-btn { display: grid; grid-template-columns: minmax(0, 1fr) var(--sp-val) 18px; align-items: center; gap: var(--sp-6); width: 100%; padding: 3px var(--sp-2) 3px 0; border: 0; border-radius: 4px; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
 /* Un solo hover, quello della riga (come nelle altre tabelle); la freccia da cliccare si accende e si sposta un poco */
 .sp-team { cursor: default; }
@@ -141,10 +140,7 @@
 .guide-tiles li { display: grid; align-content: start; gap: var(--sp-2); padding: var(--sp-4) var(--sp-5); border: 1px solid var(--line-soft); background: color-mix(in srgb, var(--raised) 55%, var(--panel)); }
 .guide-tile-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
 .guide-tile-head b { font-size: var(--fs-small); font-weight: 600; line-height: 1.2; color: var(--text); }
-.guide-tile-head .guide-pct { flex: none; margin-left: 0; }
-.guide-pct.low { background: color-mix(in srgb, var(--accent) 10%, var(--raised)); color: var(--muted); }
 .guide-tiles small { font-size: var(--fs-caption); line-height: 1.35; color: var(--muted); }
-.help-panel .guide-scale { margin-top: var(--sp-3); font-size: var(--fs-small); color: var(--muted); }
 /* La guida: righe come Offesa e Difesa, il dettaglio di ogni fonte nel tooltip del "?" */
 .area-guide-speed .help-panel { padding-bottom: var(--sp-6); }
 .area-guide-speed .help-panel h4 { margin-top: var(--sp-5); }
@@ -164,10 +160,6 @@
   .def-frame.sp-general .def-mon-stats { display: flex; align-items: center; }
   .def-frame.sp-general .def-mon-line > .def-mon-tag.line { display: none; }
 }
-/* Telefono e tablet col team a sinistra (.og-stack): la barra a tutta larghezza sotto il nome, numeri e totale a destra */
-.sp-stack-table .og-bar-row td { padding-top: var(--sp-1); }
-.sp-stack-table .sp-bar-btn { width: 100%; }
-.def-general .sp-stack-table thead th.og-share-h { text-align: right; }
 
 /* Il foglio dal basso (telefono e tablet): come quelli di Offesa e Difesa, i titoletti come og-sheet-sec h4 */
 .sp-sheet .sp-checks { display: flex; flex-wrap: wrap; gap: var(--sp-3); padding: 0; border: 0; }

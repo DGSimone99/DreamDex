@@ -38,10 +38,3 @@ export function useMediaQuery(query: string): boolean {
   }, [query]);
   return value;
 }
-
-/** Le tabelle a righe (Generale di Offesa, Difesa e Velocità, Recupero): sotto i 1100 px, telefono e ogni tablet (col team
- *  a sinistra il pannello resta largo ~660 px, in verticale ~780): le colonne affiancate sono troppo strette. */
-export function useStackedTables(): boolean {
-  // Tutto sotto i 1100 px: telefono, tablet in verticale (team in alto) e in orizzontale (team a sinistra)
-  return useMediaQuery(FLIP_TABLES_QUERY);
-}

@@ -22,7 +22,7 @@ import { linkTeamCard } from '../teamLink';
 import { TIP_NEUTRAL, TipGlyph, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
 import { TypeTile } from '../typeIcons';
 import { SpeedMemberDialog, SpeedMemberSheet, type SpeedParts } from './SpeedMemberDialog';
-import { FLIP_TABLES_QUERY, useMediaQuery, useStackedTables } from '../useMediaQuery';
+import { FLIP_TABLES_QUERY, useMediaQuery } from '../useMediaQuery';
 import { AreaHero } from '../AreaHero';
 import { PedanaCard } from '../PedanaCard';
 
@@ -64,7 +64,6 @@ type Parts = SpeedParts;
 export function SpeedGeneral({ speed, meta, ctx, room = false, roomNone = false, value = null }: { speed: TeamSpeed; meta: boolean; ctx: AreaContext; room?: boolean; /** Nessuno nel team usa Trick Room: sulle carte l'interruttore spento in fondo alla legenda. */ roomNone?: boolean; /** Il voto della Velocità (la lettera nella riga del team delle carte). */ value?: number | null }) {
   const t = useT();
   const lang = useLang();
-  const stacked = useStackedTables();
   // Telefono e tablet: i membri come carte Pedana, come Offesa e Difesa; la carta apre il foglio coi rivali (AnalysisSheet, come Offesa e Difesa)
   const cards = useMediaQuery(FLIP_TABLES_QUERY);
   const { members } = speed;
@@ -243,35 +242,8 @@ export function SpeedGeneral({ speed, meta, ctx, room = false, roomNone = false,
   }
 
   return (
-    <div className={`def-frame def-general sp-general${room ? ' sp-room' : ''}${stacked ? ' og-stack' : ''}`}>
+    <div className={`def-frame def-general sp-general${room ? ' sp-room' : ''}`}>
       <div className="ad-scroll">
-        {stacked ? (
-          // Telefono e tablet col team a sinistra: come la Generale di Offesa e Difesa, per ogni membro una fascia col nome
-          // in alto e sotto la barra a tutta larghezza (numeri e totale a destra); in fondo il team
-          <table className="def-grid def-members og-stack-table sp-stack-table" aria-label={`${t('area.speed')}: ${t('detail.tab.general')}`}>
-            <thead>
-              <tr>
-                <th scope="col" className="def-mon-h og-stack-head">{t('detail.member')}</th>
-                <th scope="col" className="og-share-h">{head}</th>
-              </tr>
-            </thead>
-            {ctx.team.map((set, slot) => {
-              const { name, mon, bar } = rowOf(set, slot);
-              return (
-                <tbody key={`${name}-${slot}`} className={`og-stack-mon${slot % 2 === 0 ? ' og-alt' : ''}`}>
-                  {slot > 0 && <tr className="og-gap" aria-hidden="true"><td colSpan={2} /></tr>}
-                  <tr className="og-mon-row"><th scope="rowgroup" colSpan={2}>{mon}</th></tr>
-                  <tr className="og-bar-row"><td colSpan={2}>{bar}</td></tr>
-                </tbody>
-              );
-            })}
-            <tbody className="og-stack-mon og-stack-team">
-              <tr className="og-gap" aria-hidden="true"><td colSpan={2} /></tr>
-              <tr className="og-mon-row"><th scope="rowgroup" colSpan={2}><span className="og-plate">{t('sdetail.gen.total')}</span></th></tr>
-              <tr className="og-bar-row"><td colSpan={2}>{teamBar}</td></tr>
-            </tbody>
-          </table>
-        ) : (
         <table className="def-grid def-members" aria-label={`${t('area.speed')}: ${t('detail.tab.general')}`}>
           <colgroup><col className="def-col-mon" /><col /></colgroup>
           <thead>
@@ -308,7 +280,6 @@ export function SpeedGeneral({ speed, meta, ctx, room = false, roomNone = false,
             </tr>
           </tfoot>
         </table>
-        )}
       </div>
       {/* In alto a destra, come nelle altre aree: cosa sono i pezzi a righe della barra (in Trick Room una riga sola) */}
       <div className="rob-legend og-legend" aria-hidden="true"><span className="area-legend">

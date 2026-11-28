@@ -1356,6 +1356,656 @@ STATES['editor-tab-duel'] = editorThen(p => clickText(p, '.editor-tabs [role="ta
 STATES['fill-settings'] = { hash: hash(TEAM.slice(0, 3)), run: async p => { await openFill(p); await wait(800); const el = await p.$('.fill-settings-button'); if (!el) return false; await el.click(); await wait(600); return true; } };
 STATES['team-menu'] = { run: async p => { const el = await p.$('.team-more-button'); if (!el) return false; await el.click(); await wait(500); return true; } };
 STATES['editor-item-menu'] = editorThen(async p => { const el = await p.$('.slot.open .drawer .set-box .set-plates .set-plate'); if (!el) return false; const b = await el.boundingBox(); if (!b) return 'no box'; await p.mouse.click(b.x + b.width * 0.6, b.y + b.height / 2); await wait(600); return true; });
+
+// --- Momenti rari (per la copertura del CSS: classi che compaiono solo per un attimo o dopo un'azione) ---
+/** Come hash, con una scelta del formato intera (es. il gioco Scarlatto/Violetto) al posto delle regole. */
+const hashChoice = (team: unknown[], choice: Record<string, unknown>) => '#team=' + Buffer.from(JSON.stringify({ team, choice })).toString('base64')
+  .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const COMPETITIVE = { family: 'competitive', source: 'smogon', gen: 'natdex', battle: 'singles', tier: 'OU', ignoreBans: false, multipleMegas: false };
+const SV = { family: 'game', game: 'sv', allPokedex: false, legendaries: false };
+/**
+ * Il tempo quasi fermo: i timer da 100 ms in su durano mille volte di più (una chiusura animata, un'uscita di Eevee, un
+ * avviso restano a metà). Come stringa: dentro evaluate niente funzioni con nome (tsx aggiunge __name).
+ */
+const slowTime = (p: Page) => p.evaluate(`(() => { const st = window.setTimeout.bind(window); window.setTimeout = (fn, ms, ...a) => st(fn, ms >= 100 ? ms * 1000 : ms, ...a); })()`);
+/** Le animazioni CSS ferme dove sono ora (per la foto a metà di una chiusura). */
+const pauseAnims = (p: Page) => p.evaluate(`(() => { for (const a of document.getAnimations()) a.pause(); })()`);
+/** Math.random fisso: le scelte a caso (dove riappare Eevee) diventano sempre le stesse. */
+const fixRandom = (p: Page, value: number) => p.evaluate(`(() => { Math.random = () => ${value}; })()`);
+/** Copia negli appunti finta (senza permessi la vera fallisce): Esporta e Copia riescono. */
+const fakeClipboard = (p: Page) => p.evaluate(`(() => { Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async () => {}, readText: async () => '' } }); })()`);
+/** Scrive nel campo (clic, testo) e lascia a React il tempo di aggiornare. */
+async function typeInto(p: Page, selector: string, text: string, enter = false): Promise<boolean> {
+  const el = await p.$(selector);
+  if (!el) return false;
+  await el.click({ count: 3 });
+  await el.type(text);
+  if (enter) await p.keyboard.press('Enter');
+  await wait(500);
+  return true;
+}
+/**
+ * Trascinamento finto (eventi drag del browser, il mouse vero di puppeteer non li fa): parte da `from`, entra e resta sopra
+ * l'elemento n di `to`. Il rilascio non c'è: la foto è a metà, con la carta fantasma e il posto evidenziato.
+ */
+async function dragOver(p: Page, from: string, to: string, n = 0): Promise<boolean> {
+  const ok = await p.evaluate((f, t, i) => {
+    const src = document.querySelector<HTMLElement>(f);
+    const dst = document.querySelectorAll<HTMLElement>(t)[i];
+    if (!src || !dst) return false;
+    const dt = new DataTransfer();
+    const a = src.getBoundingClientRect();
+    src.dispatchEvent(new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer: dt, clientX: a.x + a.width / 2, clientY: a.y + a.height / 2 }));
+    return true;
+  }, from, to, n);
+  if (!ok) return false;
+  await wait(200);
+  await p.evaluate((t, i) => {
+    const dst = document.querySelectorAll<HTMLElement>(t)[i];
+    const b = dst.getBoundingClientRect();
+    for (const type of ['dragenter', 'dragover', 'dragover']) dst.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: new DataTransfer(), clientX: b.x + b.width / 3, clientY: b.y + b.height / 2 }));
+    document.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer: new DataTransfer(), clientX: b.x + b.width / 3, clientY: b.y + b.height / 2 }));
+  }, to, n);
+  await wait(400);
+  return true;
+}
+/** Telefono e tablet: tocco lungo (oltre i 450 ms del menu del membro) al centro dell'elemento. */
+async function longPress(p: Page, selector: string): Promise<boolean> {
+  const el = await p.$(selector);
+  const b = await el?.boundingBox();
+  if (!b) return false;
+  await p.touchscreen.touchStart(b.x + b.width / 2, b.y + b.height / 3);
+  await wait(700);
+  await p.touchscreen.touchEnd();
+  await wait(400);
+  return true;
+}
+/** Apre la finestra con un Eevee che sbircia (Come funziona il voto) e clicca Eevee dov'è ora. */
+async function eeveeClick(p: Page, selector = '.eevee-peek .peek-head'): Promise<boolean | string> {
+  if (!await p.$('.help-frame.with-peek')) { const ok = await ratingHelp(p); if (ok !== true) return ok; await wait(900); }
+  const el = await p.$(selector);
+  if (!el) return `no ${selector}`;
+  await el.click();
+  return true;
+}
+const editorOf = async (p: Page, name: RegExp) => { if (!await clickText(p, '.slot.filled > .slot-card', name)) return false; await wait(600); return true; };
+const openSetMenu = async (p: Page) => { if (!await editorOf(p, /Great Tusk/)) return 'no card'; if (!await clickText(p, '.slot.open button.set-menu-button', /./)) return 'no set button'; await wait(300); return true; };
+// I miei set di Great Tusk (memoria del browser): uno uguale al set del team, gli altri con una mossa diversa
+const MY_SET = (name: string, move: string) => ({ name, set: { ...TEAM[0], moves: [...TEAM[0].moves.slice(0, 3), move] } });
+const LISTS = (lists: unknown) => ({ 'dreamdex.lists': JSON.stringify(lists) });
+const SAVED = { 'dreamdex.savedTeams': JSON.stringify([{ name: 'Pioggia NatDex', text: 'Pelipper', choice: COMPETITIVE }, { name: 'Sole', text: 'Torkoal' }]),
+  'dreamdex.currentSaved': JSON.stringify({ name: 'Pioggia NatDex', text: 'Pelipper' }) };
+const openSaved = async (p: Page) => { await p.evaluate(() => (document.querySelector('.team-head details.saved-menu > summary') as HTMLElement | null)?.click()); await wait(400); return !!await p.$('details.saved-menu[open]') || 'no saved menu'; };
+const openFormat = async (p: Page) => { await p.click('.rail-format'); await wait(500); };
+const pickFamily = (p: Page, family: string) => p.evaluate(f => { const el = document.querySelector<HTMLInputElement>(`input[name="format-family"][value="${f}"]`); el?.click(); return !!el; }, family);
+
+// Campo Psichico (Tapu Lele) con chi lo sfrutta: il tooltip di quella condizione
+const PSYCHIC = [
+  member('Tapu Lele', 'Choice Specs', 'Psychic Surge', ['Psychic', 'Moonblast', 'Focus Blast', 'Psyshock'], 'Timid', { spa: 252, spe: 252, hp: 4 }),
+  member('Indeedee', 'Life Orb', 'Psychic Surge', ['Expanding Force', 'Dazzling Gleam', 'Shadow Ball', 'Calm Mind'], 'Timid', { spa: 252, spe: 252, hp: 4 }),
+  ...TEAM.slice(0, 3),
+];
+const RARE_STATES: Record<string, State> = {
+  // Finestre della barra a sinistra: Crediti e Segnala o suggerisci (senza la chiave di Web3Forms nella build solo GitHub)
+  credits: { only: 'desktop', run: async p => { const ok = await clickText(p, '.rail-links .rail-credits', /^(Crediti|Credits)$/); await wait(600); return ok; } },
+  feedback: { only: 'desktop', run: async p => { const ok = await clickText(p, '.rail-links .rail-credits', /Segnala|Report/); await wait(600); return ok; } },
+  // Il modulo pieno e l'invio: serve una build con VITE_WEB3FORMS_KEY (qualsiasi valore); la risposta del servizio è finta
+  ...Object.fromEntries(([['feedback-sent', true], ['feedback-error', false]] as const).map(([key, success]) => [key, { only: 'desktop', run: async (p: Page) => {
+    await p.setRequestInterception(true);
+    p.on('request', r => { if (r.url().includes('web3forms')) void r.respond({ status: success ? 200 : 500, contentType: 'application/json', body: JSON.stringify({ success }) }); else void r.continue(); });
+    if (!await clickText(p, '.rail-links .rail-credits', /Segnala|Report/)) return 'no feedback button';
+    await wait(500);
+    if (!await p.$('.feedback-kinds')) return 'build without VITE_WEB3FORMS_KEY: no form';
+    await typeInto(p, '.feedback-dialog textarea', 'Il voto di questo team mi sembra basso.');
+    if (!await clickText(p, '.feedback-actions button[type="submit"]', /./)) return 'no send';
+    await wait(800);
+    return true;
+  } } as State])),
+  'feedback-form': { only: 'desktop', run: async p => {
+    if (!await clickText(p, '.rail-links .rail-credits', /Segnala|Report/)) return 'no feedback button';
+    await wait(500);
+    return (!!await p.$('.feedback-kinds')) || 'build without VITE_WEB3FORMS_KEY: no form';
+  } },
+  // Avvisi senza Annulla: team copiato per Showdown (col voto) e un Pokémon già nel team cercato e aggiunto con Invio
+  'toast-done': { only: 'desktop', run: async p => {
+    await fakeClipboard(p);
+    if (!await clickText(p, '.team-head .export-main', /./)) return 'no export';
+    await wait(500);
+    return (!!await p.$('.done-toast')) || 'no toast';
+  } },
+  'toast-already': { run: async p => {
+    await tab(p, 'pokemon');
+    await wait(800);
+    if (!await typeInto(p, '.suggestions-panel .search input', 'Kingambit', true)) return 'no search';
+    return (!!await p.$('.done-toast')) || 'no toast';
+  } },
+  // Ricerca nella lista: il suggerimento di Invio dentro il campo, e una ricerca che non trova niente (Eevee pensieroso)
+  'search-hint': { run: async p => { await tab(p, 'pokemon'); await wait(800); return typeInto(p, '.suggestions-panel .search input', 'Garch'); } },
+  'search-empty': { run: async p => { await tab(p, 'pokemon'); await wait(800); return typeInto(p, '.suggestions-panel .search input', 'zzzz'); } },
+  // Bannati nascosti dalla lista: il pulsante ⊘ N nella fascia "Candidati"; premuto, i bannati tornano col segno ⊘
+  'pokemon-bans': { storage: LISTS({ byFormat: { ou: { favorites: [], bans: ['Victini', 'Latios', 'Latias', 'Cresselia', 'Ting-Lu'] } } }), run: async p => { await tab(p, 'pokemon'); await wait(1500); return (!!await p.$('.ban-pill')) || 'no ban pill'; } },
+  'pokemon-bans-shown': { storage: LISTS({ byFormat: { ou: { favorites: [], bans: ['Victini', 'Latios', 'Latias', 'Cresselia', 'Ting-Lu'] } } }), run: async p => { await tab(p, 'pokemon'); await wait(1500); const ok = await clickText(p, '.ban-pill', /./); await wait(1200); return ok; } },
+  // Legenda dei segni delle carte (il "?" accanto a Candidati) e il menu Tipo di team aperto
+  'sym-legend': { run: async p => { await tab(p, 'pokemon'); await wait(800); const ok = await clickText(p, '.sym-legend .help-button', /./); await wait(300); return ok; } },
+  'team-type-menu': { run: async p => { await tab(p, 'pokemon'); await wait(800); const ok = await clickText(p, '.tt-trigger', /./); await wait(400); return ok || 'no team type'; } },
+  // Gioco Scarlatto/Violetto: il segno delle esclusive sulle carte e nel dettaglio
+  'pokemon-game': { hash: hashChoice(TEAM.slice(0, 3), SV), run: async p => { await tab(p, 'pokemon'); await wait(1500); return true; } },
+  // Team salvati: il team caricato è cambiato (pallino sulla targa, riga "non salvato" e Aggiorna nel menu); salva con un
+  // nome che c'è già (la finestra di conferma)
+  'saved-changed': { storage: SAVED, run: async p => openSaved(p) },
+  'saved-plate': { storage: SAVED },
+  'saved-overwrite': { storage: SAVED, run: async p => {
+    if (await openSaved(p) !== true) return 'no saved menu';
+    if (!await typeInto(p, '.saved-new input', 'Sole')) return 'no name field';
+    if (!await clickText(p, '.saved-new button', /./)) return 'no save';
+    await wait(500);
+    return (!!await p.$('.confirm-dialog')) || 'no confirm';
+  } },
+  // Importa un set con una mossa che non impara: la domanda su Custom Skillset
+  'import-review': { run: async p => {
+    if (!await clickText(p, 'details.popover > summary', /Import/)) return 'no import';
+    await wait(300);
+    const area = await p.$('.import-panel textarea');
+    if (!area) return 'no text box';
+    await area.type('Great Tusk @ Booster Energy\nAbility: Protosynthesis\n- Flamethrower\n- Headlong Rush\n');
+    if (!await clickText(p, '.import-panel button.apply', /./)) return 'no import button';
+    await wait(600);
+    return (!!await p.$('.import-dialog')) || 'no review';
+  } },
+  // Finestra del formato: Libero con la Gen 1 (nota, generazioni, scheda cambiata, membri non ammessi) e il gioco
+  'format-free': { run: async p => {
+    await openFormat(p);
+    if (!await pickFamily(p, 'free')) return 'no free family';
+    await wait(300);
+    if (!await p.evaluate(() => { const el = document.querySelector<HTMLInputElement>('.format-gens input[value="1"]'); el?.click(); return !!el; })) return 'no gens';
+    await wait(400);
+    return true;
+  } },
+  'format-game': { hash: hash(USER), run: async p => { await openFormat(p); const ok = await pickFamily(p, 'game'); await wait(400); return ok || 'no game family'; } },
+  // Il logo della fonte che non si carica: al suo posto il nome
+  'format-logo-missing': { run: async p => {
+    await p.setRequestInterception(true);
+    p.on('request', r => { if (/formats\/[^/]+\.(svg|png|webp)/.test(r.url())) void r.abort(); else void r.continue(); });
+    await openFormat(p);
+    await wait(500);
+    return true;
+  } },
+  // Cambio di formato coi dati che non arrivano ancora (richieste ferme): la riga "Caricamento…" in cima
+  'format-loading': { run: async p => {
+    await p.setRequestInterception(true);
+    p.on('request', r => { if (/(stats|sets|presets|meta|teams)[-.]/.test(r.url())) return; void r.continue(); });
+    await openFormat(p);
+    if (!await p.evaluate(() => { const el = document.querySelector<HTMLInputElement>('input[name="format-gen"][value="9"]'); el?.click(); return !!el; })) return 'no gen 9';
+    await wait(300);
+    await p.evaluate(() => { const b = [...document.querySelectorAll<HTMLElement>('.fmt-actions button')].at(-1); b?.click(); });
+    await wait(800);
+    return (!!await p.$('.banner')) || 'no banner';
+  } },
+  // Menu Set: "Salva come…" aperto (nome e Salva), I miei set con righe (rinomina, elimina), vuoti, pieni (5: la nota)
+  'set-menu-save': { storage: { 'dreamdex.mySets': JSON.stringify({ 'Great Tusk': [MY_SET('Mio', 'Bulk Up'), MY_SET('Veloce', 'Rapid Spin')] }) }, run: async p => {
+    const ok = await openSetMenu(p);
+    if (ok !== true) return ok;
+    if (!await clickText(p, '.slot.open .set-menu-foot button', /Salva come|Save as/)) return 'no save as';
+    await wait(400);
+    return true;
+  } },
+  'set-menu-mine-empty': { run: async p => {
+    const ok = await openSetMenu(p);
+    if (ok !== true) return ok;
+    const done = await clickText(p, '.slot.open .set-menu-tabs [role="tab"]', /I miei set|My sets/);
+    await wait(300);
+    return done;
+  } },
+  'set-menu-full': { storage: { 'dreamdex.mySets': JSON.stringify({ 'Great Tusk': ['Close Combat', 'Stone Edge', 'Earthquake', 'Knock Off', 'Ice Spinner'].map((m, i) => MY_SET(`Set ${i + 1}`, m)) }) }, run: async p => {
+    const ok = await openSetMenu(p);
+    if (ok !== true) return ok;
+    if (!await clickText(p, '.slot.open .set-menu-foot button', /Salva come|Save as/)) return 'no save as';
+    await wait(400);
+    return true;
+  } },
+  // Eevee che sbircia (Come funziona il voto): cliccato in alto fa il saltello (fermato a metà); poi riappare di lato
+  // (Math.random fisso: la faccia), cliccato rientra (fermato a metà); o solo la coda da un lato
+  'eevee-hop': { only: 'desktop', run: async p => { const ok = await ratingHelp(p); if (ok !== true) return ok; await wait(900); await slowTime(p); const c = await eeveeClick(p); await wait(200); await pauseAnims(p); return c; } },
+  'eevee-side': { only: 'desktop', run: async p => {
+    await fixRandom(p, 0.1);
+    const c = await eeveeClick(p);
+    if (c !== true) return c;
+    await wait(4500);
+    return (!!await p.$('.eevee-peek.at-side')) || 'no side peek';
+  } },
+  'eevee-retreat': { only: 'desktop', run: async p => {
+    await fixRandom(p, 0.1);
+    const c = await eeveeClick(p);
+    if (c !== true) return c;
+    await wait(4500);
+    await slowTime(p);
+    const r = await eeveeClick(p, '.eevee-peek.at-side .peek-head');
+    await wait(150);
+    await pauseAnims(p);
+    return r;
+  } },
+  'eevee-tail': { only: 'desktop', run: async p => {
+    await fixRandom(p, 0.9);
+    const c = await eeveeClick(p);
+    if (c !== true) return c;
+    await wait(4500);
+    return (!!await p.$('.eevee-tail-peek')) || 'no tail';
+  } },
+  // Chiusura animata di una finestra (la copia che si spegne), fermata a metà
+  'modal-closing': { run: async p => {
+    const ok = await ratingHelp(p);
+    if (ok !== true) return ok;
+    await wait(900);
+    await slowTime(p);
+    if (!await clickText(p, '.help-dialog .help-close', /./)) return 'no close';
+    await wait(250);
+    await pauseAnims(p);
+    return (!!await p.$('.help-backdrop.closing')) || 'no closing copy';
+  } },
+  // Liste: menu Ordine, scelta della lista, lista nuova (il campo del nome), menu ⋯, liste espanse, ricerca col suggerimento
+  'lists-order': { run: async p => { await tab(p, 'lists'); await wait(500); const ok = await clickText(p, '.dex-order-pick', /./); await wait(300); return ok; } },
+  'lists-pick': { run: async p => { await tab(p, 'lists'); await wait(500); const ok = await clickText(p, '.lists-pick', /./); await wait(300); return ok; } },
+  'lists-new': { run: async p => {
+    await tab(p, 'lists');
+    await wait(500);
+    if (!await clickText(p, '.lists-pick', /./)) return 'no picker';
+    await wait(300);
+    const ok = await clickText(p, '.lists-menu-item.new', /./);
+    await wait(300);
+    return ok;
+  } },
+  'lists-more': { run: async p => { await tab(p, 'lists'); await wait(500); const ok = await clickText(p, '.lists-more', /./); await wait(300); return ok; } },
+  'lists-expanded': { only: 'desktop', run: async p => { await tab(p, 'lists'); await wait(500); const ok = await clickText(p, '.lists-expand', /./); await wait(500); return ok; } },
+  'lists-expanded-full': { only: 'desktop', storage: LISTS({ universal: { favorites: ['Garchomp', 'Toxapex'], bans: [] }, byFormat: { ou: { favorites: ['Great Tusk', 'Kingambit'], bans: ['Toxapex', 'Magikarp'] } } }), run: async p => { await tab(p, 'lists'); await wait(500); const ok = await clickText(p, '.lists-expand', /./); await wait(500); return ok; } },
+  'lists-search': { run: async p => { await tab(p, 'lists'); await wait(500); return typeInto(p, '.lists-bar .search-field input', 'Garch'); } },
+  // Preferito per tutti i formati e bannato in questo: il segno del globo (e della lista che vince) sull'icona
+  'lists-universal': { storage: LISTS({ universal: { favorites: ['Garchomp', 'Toxapex'], bans: [] }, byFormat: { ou: { favorites: ['Great Tusk'], bans: ['Toxapex'] } } }), run: async p => { await tab(p, 'lists'); await wait(500); return true; } },
+  // Trascinamento di un Preferito verso i Bannati: la lista di partenza col posto sollevato, l'altra che accoglie
+  'lists-drag': { only: 'desktop', storage: LISTS({ byFormat: { ou: { favorites: ['Great Tusk', 'Kingambit', 'Gholdengo'], bans: ['Magikarp'] } } }), run: async p => {
+    await tab(p, 'lists');
+    await wait(500);
+    return dragOver(p, '.lbox.favorites .lslot-mon', '.lbox.bans');
+  } },
+  // Telefono e tablet: il foglio di una lista vuota, e il foglio che si chiude (fermato a metà)
+  'lists-sheet-empty': { only: 'small', run: async p => { await tab(p, 'lists'); await wait(500); const ok = await clickText(p, '.lists-tab.favorites', /./); await wait(600); return ok; } },
+  'lists-sheet-closing': { only: 'small', run: async p => {
+    await tab(p, 'lists');
+    await wait(500);
+    if (!await clickText(p, '.lists-tab.favorites', /./)) return 'no list button';
+    await wait(700);
+    await slowTime(p);
+    if (!await clickText(p, '.lists-sheet-back', /./)) return 'no back';
+    await wait(150);
+    await pauseAnims(p);
+    return (!!await p.$('.lists-sheet.closing')) || 'no closing';
+  } },
+  // Telefono e tablet: il foglio del candidato e quello della Meta che si chiudono (fermati a metà)
+  'pokemon-sheet-closing': { only: 'small', run: async p => {
+    await tab(p, 'pokemon');
+    await wait(1500);
+    const picks = await p.$$('.suggestions .pick');
+    await picks[1]?.evaluate(el => (el as HTMLElement).click());
+    await wait(700);
+    await slowTime(p);
+    if (!await clickText(p, '.sheet-back', /./) && !await clickText(p, '.sheet-scrim', /./)) return 'no back';
+    await wait(150);
+    await pauseAnims(p);
+    return (!!await p.$('.picker.sheet-closing')) || 'no closing';
+  } },
+  'meta-sheet-closing': { only: 'small', hash: hash(SIX), run: async p => {
+    await tab(p, 'meta');
+    await wait(800);
+    const cards = await p.$$('.meta-card');
+    await cards[3]?.evaluate(el => (el as HTMLElement).click());
+    await wait(700);
+    await slowTime(p);
+    await p.keyboard.press('Escape');
+    await wait(150);
+    await pauseAnims(p);
+    return (!!await p.$('.meta-tab.sheet-closing')) || 'no closing';
+  } },
+  // Telefono e tablet: tocco lungo su una carta del team, il menu del membro
+  'member-menu': { only: 'small', run: async p => { await tab(p, 'pokemon'); await wait(500); const ok = await longPress(p, '.slot.filled > .slot-card'); return ok && ((!!await p.$('.member-menu')) || 'no menu'); } },
+  // Computer: una carta del team trascinata su un'altra (la carta fantasma, il posto vuoto, quella che si fa da parte) e un
+  // candidato trascinato dalla lista sul posto libero
+  'team-drag': { only: 'desktop', run: async p => { await tab(p, 'pokemon'); await wait(500); return dragOver(p, '.slot.filled > .slot-card', '.slot.filled > .slot-card', 2); } },
+  'team-drag-candidate': { only: 'desktop', run: async p => { await tab(p, 'pokemon'); await wait(1500); return dragOver(p, '.suggestions.cards > li.card [draggable="true"], .suggestions.cards > li.card', '.slot.empty'); } },
+  // Voto mentre si modifica un membro (un altro set dal menu Set): "da N ±M" sotto il voto; chiuso l'editor resta un attimo
+  // (fermato)
+  'grade-delta-live': { run: async p => changeSet(p) },
+  'grade-delta-flash': { run: async p => {
+    const ok = await changeSet(p);
+    if (ok !== true) return ok;
+    await slowTime(p);
+    if (!await clickText(p, '.slot.open .editor-close', /./)) return 'no close';
+    await wait(600);
+    return (!!await p.$('.grade-delta.flash')) || 'no flash';
+  } },
+  // Schermo basso (1366x657): con l'editor aperto il team si riduce da solo, il cambio sta nella striscia del voto
+  'grade-delta-short': { only: 'desktop', run: async p => changeSet(p) },
+  // Tablet: la freccetta della carta del voto aperta (le righe delle aree sotto)
+  'grade-areas-open': { only: 'small', run: async p => { await tab(p, 'pokemon'); await wait(400); const ok = await clickText(p, '.grade-fold', /./); await wait(400); return ok || 'no fold'; } },
+  // Tooltip DreamDex: una mossa dell'editor, una condizione del Riassunto (pioggia, poi altri meteo e campi), una minaccia
+  'move-tip': { only: 'desktop', run: async p => {
+    if (!await editorOf(p, /Great Tusk/)) return 'no card';
+    const el = await p.$('.slot.open [data-move-tip]');
+    if (!el) return 'no move';
+    await el.hover();
+    await wait(700);
+    return (!!await p.$('.mtip-stats')) || 'no move tip';
+  } },
+  ...Object.fromEntries(([['rain', RAIN, /Pioggia/], ['sand', WEATHERS, /Sabbia/], ['electric', WEATHERS, /Elettrico/], ['grassy', WEATHERS, /Erboso/],
+    ['sun', WEATHERS_CORES, /Sole/], ['misty', WEATHERS_CORES, /Nebbioso/], ['snow', FIELD, /Neve/], ['psychic', PSYCHIC, /Psichico/]] as const).map(([key, team, re]) => [`cond-tip-${key}`, { hash: hash([...team]), only: 'desktop', run: async (p: Page) => {
+    await tab(p, 'analysis');
+    await wait(800);
+    // La riga della condizione dal suo nome (aria-label: chi la porta, la condizione, chi ne approfitta)
+    let line = null;
+    for (const el of await p.$$('.dash-summary .sum-line')) if (re.test(await el.evaluate(e => e.getAttribute('aria-label') ?? ''))) { line = el; break; }
+    if (!line) return `no condition ${re.source}`;
+    await line.hover();
+    await wait(600);
+    return (!!await p.$('.ctip-cells')) || 'no condition tip';
+  } } as State])),
+  'threat-tip': { hash: hash(SIX), only: 'desktop', run: async p => {
+    await tab(p, 'analysis');
+    await wait(800);
+    await clickText(p, '.dash-coverage [role="tab"]', /^Meta$/);
+    await wait(400);
+    const tile = await p.$('.dash-coverage .cov-tile:not(.more)');
+    if (!tile) return 'no threat tile';
+    await tile.hover();
+    await wait(600);
+    return (!!await p.$('.thr-tip-why')) || 'no threat tip';
+  } },
+  // Sfida: le impostazioni dell'avversario aperte (set, strumento, EV) con un EV cambiato (Torna al set)
+  'duel-settings': { only: 'desktop', run: async p => {
+    const ok = await STATES['editor-duel'].run!(p);
+    if (ok !== true) return ok;
+    if (!await clickText(p, '.slot.open .duel-settings', /./)) return 'no settings';
+    await wait(400);
+    const ev = await p.$('.duel-settings-pop .duel-ev input');
+    if (!ev) return 'no ev';
+    await ev.click({ count: 3 });
+    await ev.type('100');
+    await wait(500);
+    return true;
+  } },
+  // Sfida: i consigli che si calcolano (il calcolo fermato), e la riga del meta di un consiglio col suo elenco (tooltip col
+  // mouse, sotto la riga col dito)
+  'duel-tip-busy': { run: async p => {
+    await holdWorker(p, 'duelTips');
+    const ok = await STATES['editor-duel'].run!(p);
+    if (ok !== true) return ok;
+    const chip = await p.$('.slot.open .duel-tip-chip:not(.out)');
+    if (!chip) return 'no tip';
+    await chip.click();
+    await wait(500);
+    return (!!await p.$('.duel-tip-busy')) || 'no busy';
+  } },
+  'duel-tip-fx': { run: async p => {
+    const ok = await STATES['editor-duel-tip'].run!(p);
+    if (ok !== true) return ok;
+    const count = await p.$('.duel-tip-card .duel-tip-count');
+    if (!count) return 'no meta line';
+    if (await p.evaluate(() => matchMedia('(hover: hover)').matches)) await count.hover(); else await count.click();
+    await wait(600);
+    return true;
+  } },
+  // Migliora i set: la finestra mentre calcola (il calcolo fermato) e quella di un team da torneo, dove non cambia niente
+  'improve-busy': { hash: hash(SIX), run: async p => {
+    await holdWorker(p, 'improve');
+    await p.evaluate(() => (document.querySelector('.team-guide') as HTMLElement | null)?.click());
+    // La finestra arriva quando la pagina finisce di preparare la lista dei candidati
+    return p.waitForSelector('.improve-busy', { timeout: 10000 }).then(() => true, () => 'no busy');
+  } },
+  // (applicati i cambi proposti, riaperta: non c'è più niente da cambiare)
+  'improve-none': { hash: hash(CLEAR), run: async p => {
+    for (let round = 0; round < 3; round++) {
+      await p.evaluate(() => (document.querySelector('.team-guide') as HTMLElement | null)?.click());
+      await p.waitForSelector('.improve-none, .apply.primary:not([disabled])', { timeout: 20000 });
+      await wait(300);
+      if (await p.$('.improve-none')) return true;
+      await p.click('.apply.primary');
+      await wait(1500);
+    }
+    return 'some set changes';
+  } },
+  // Filtri: una ricerca che non trova niente, poi la finestra dei filtri (zero risultati); un filtro acceso (Azzera)
+  'filters-none': { run: async p => {
+    await tab(p, 'pokemon');
+    await wait(800);
+    if (!await typeInto(p, '.suggestions-panel .search input', 'zzzz')) return 'no search';
+    const ok = await clickText(p, '.toolbar .filters-trigger', /./);
+    await wait(500);
+    return ok;
+  } },
+  // Liste: un filtro acceso, chiusa la finestra resta Azzera accanto a Filtri
+  'filters-reset': { run: async p => {
+    await tab(p, 'lists');
+    await wait(500);
+    if (!await clickText(p, '.lists-panel .filters-trigger', /./)) return 'no filters';
+    await wait(400);
+    await p.evaluate(() => (document.querySelector('.filters-dialog [role="group"] button') as HTMLElement | null)?.click());
+    await wait(300);
+    await p.keyboard.press('Escape');
+    await wait(500);
+    return (!!await p.$('.filters-reset')) || 'no reset';
+  } },
+  // Completa team coi Preferiti e i Bannati dell'utente (♥ sui Pokémon proposti, la nota dei bannati esclusi)
+  'fill-lists': { hash: hash(TEAM.slice(0, 3)), storage: LISTS({ byFormat: { ou: { favorites: FAVS, bans: ['Victini', 'Latios', 'Latias'] } } }), run: async p => { await openFill(p); await wait(6000); return true; } },
+  // La carta del membro (tooltip) col team ridotto, sul membro con una mossa che non impara (gli avvisi in cima) e su un
+  // membro senza mosse
+  'card-tip-alert': { hash: hash(MOVE), only: 'desktop', run: async p => {
+    await tab(p, 'pokemon');
+    if (!await clickText(p, 'button.band-toggle', /./)) return 'no band toggle';
+    await wait(600);
+    const card = await p.$('.slot.filled > .slot-card');
+    if (!card) return 'no card';
+    await card.hover();
+    await wait(1200);
+    return (!!await p.$('.mcard-alerts')) || 'no alerts';
+  } },
+  'card-tip-nomoves': { hash: hash([{ ...TEAM[0], moves: [] }, ...TEAM.slice(1)]), only: 'desktop', run: async p => {
+    await tab(p, 'pokemon');
+    const sprite = await p.$('.slot.filled .sprite-wrap');
+    if (!sprite) return 'no sprite';
+    await sprite.hover();
+    await wait(1200);
+    return (!!await p.$('.mcard-none')) || 'no card tip';
+  } },
+  // Editor di un membro col soprannome (la specie piccola sopra) e col nome in modifica
+  'editor-nickname': { hash: hash([{ ...TEAM[0], name: 'Zannone' }, ...TEAM.slice(1)]), run: async p => editorOf(p, /Zannone/) },
+  'editor-naming': { run: async p => {
+    if (!await editorOf(p, /Great Tusk/)) return 'no card';
+    const ok = await clickText(p, '.slot.open .nickname', /./);
+    await wait(300);
+    return ok;
+  } },
+  // Telefono: l'editor scorso in giù (la testata si accorcia) e un dito che lo trascina di lato (cambio di scheda a metà)
+  'editor-shrunk': { only: 'small', run: async p => {
+    if (!await editorOf(p, /Great Tusk/)) return 'no card';
+    await editorTab(p, /^(Statistiche|Stats)$/);
+    await p.evaluate(() => { const d = document.querySelector('.slot.open .drawer'); if (d) d.scrollTop = 400; d?.dispatchEvent(new Event('scroll')); });
+    await wait(500);
+    return (!!await p.$('.drawer.shrunk')) || 'no shrink';
+  } },
+  'editor-swiping': { only: 'small', run: async p => {
+    if (!await editorOf(p, /Great Tusk/)) return 'no card';
+    const box = await (await p.$('.slot.open .drawer'))?.boundingBox();
+    if (!box) return 'no drawer';
+    const y = box.y + Math.min(box.height / 2, 300);
+    await p.touchscreen.touchStart(box.x + box.width / 2, y);
+    await p.touchscreen.touchMove(box.x + box.width / 2 - 30, y + 2);
+    await p.touchscreen.touchMove(box.x + box.width / 2 - 80, y + 4);
+    await wait(300);
+    return (!!await p.$('.swiping')) || 'no swipe';
+  } },
+  // Col dito: tocco lungo su un pulsante con la spiegazione, la spiegazione in un foglio
+  'touch-tip': { only: 'small', run: async p => {
+    await tab(p, 'pokemon');
+    await wait(800);
+    const sel = await p.evaluate(() => {
+      const el = [...document.querySelectorAll<HTMLElement>('[data-hint]')].find(e => e.dataset.hint && e.getClientRects().length && !e.closest('[data-own-hold], input') && e.getBoundingClientRect().top > 0 && e.getBoundingClientRect().bottom < innerHeight);
+      if (!el) return null;
+      el.setAttribute('data-touch-probe', '');
+      return '[data-touch-probe]';
+    });
+    if (!sel || !await longPress(p, sel)) return 'no hint';
+    return (!!await p.$('.tip-sheet, .ftip[data-tip-sheet]')) || 'no tip sheet';
+  } },
+  // Coaching: il set copiato dalla carta grande, le alternative scorse a destra, l'elenco di chi resta senza risposta
+  'coaching-copy': { hash: hash(SIX), run: async p => {
+    if (!await coachingReady(p)) return 'no coaching';
+    await fakeClipboard(p);
+    const ok = await clickText(p, '.coach-hero .coach-copy', /./);
+    await wait(300);
+    return ok || 'no copy';
+  } },
+  'coaching-alts-scrolled': { hash: hash(SIX), run: async p => {
+    if (!await coachingReady(p)) return 'no coaching';
+    const ok = await p.evaluate(() => { const el = document.querySelector<HTMLElement>('.coach-alts'); if (!el || el.scrollWidth <= el.clientWidth) return false; el.scrollLeft = el.scrollWidth; el.dispatchEvent(new Event('scroll')); return true; });
+    await wait(400);
+    return ok || 'alternatives fit';
+  } },
+  // (LONE: dei problemi restano senza proposta, il pulsante sotto la classifica ne apre l'elenco)
+  'coaching-stuck': { hash: hash(LONE), run: async p => {
+    if (!await coachingReady(p)) return 'no coaching';
+    const ok = await clickText(p, '.coach-rank-stuck', /./);
+    await wait(300);
+    return ok || 'nothing stuck';
+  } },
+  // Menu Set › Salva come… col nome di un altro dei miei set: il pulsante diventa Sovrascrivi
+  'set-menu-overwrite': { storage: { 'dreamdex.mySets': JSON.stringify({ 'Great Tusk': [MY_SET('Mio', 'Bulk Up'), MY_SET('Veloce', 'Rapid Spin')] }) }, run: async p => {
+    const ok = await openSetMenu(p);
+    if (ok !== true) return ok;
+    if (!await clickText(p, '.slot.open .set-menu-foot button', /Salva come|Save as/)) return 'no save as';
+    await wait(300);
+    await typeInto(p, '.slot.open .set-menu-save input', 'Veloce');
+    return (!!await p.$('.save-set.overwrite')) || 'no overwrite';
+  } },
+  // La coda di Eevee cliccata (si ritira di scatto, fermata a metà)
+  'eevee-found': { only: 'desktop', run: async p => {
+    await fixRandom(p, 0.9);
+    const c = await eeveeClick(p);
+    if (c !== true) return c;
+    await wait(4500);
+    await slowTime(p);
+    const r = await eeveeClick(p, '.eevee-tail-peek img');
+    await wait(100);
+    await pauseAnims(p);
+    return r;
+  } },
+  // Un membro con Custom Skillset (il lucchetto aperto nell'angolo della carta) e il tooltip di una mossa con priorità
+  'slot-custom': { hash: hash([{ ...MOVE[0], customSkillset: true }, ...TEAM.slice(1)]) },
+  'move-tip-priority': { only: 'desktop', run: async p => {
+    if (!await editorOf(p, /Kingambit/)) return 'no card';
+    let pill = null;
+    for (const el of await p.$$('.slot.open [data-move-tip]')) if (/Sucker Punch|Sbigoattacco/.test(await el.evaluate(e => `${e.getAttribute('data-move-tip')} ${e.textContent}`))) { pill = el; break; }
+    if (!pill) return 'no Sucker Punch';
+    await pill.hover();
+    await wait(700);
+    return (!!await p.$('.mtip-prio')) || 'no priority';
+  } },
+  // Team salvati: il salvataggio che non riesce (memoria del browser piena: setItem fallisce)
+  'saved-failed': { storage: SAVED, run: async p => {
+    await p.evaluate(`(() => { const set = Storage.prototype.setItem; Storage.prototype.setItem = function (k, v) { if (k === 'dreamdex.savedTeams') throw new Error('QuotaExceededError'); return set.call(this, k, v); }; })()`);
+    if (await openSaved(p) !== true) return 'no saved menu';
+    if (!await typeInto(p, '.saved-new input', 'Nuovo', true)) return 'no name field';
+    return (!!await p.$('.saved-panel .errors')) || 'no error';
+  } },
+  // Sfida: l'elenco degli avversari aperto (le minacce del meta col giudizio), un avversario femmina (il simbolo), e Toxapex
+  // con sole mosse di stato (nessuna mossa che fa danno)
+  'duel-species-menu': { run: async p => {
+    if (!await editorOf(p, /Great Tusk/)) return 'no card';
+    await editorTab(p, /^(Sfida|Matchup)$/);
+    const input = await p.$('.slot.open .duel-species input');
+    if (!input) return 'no duel';
+    await input.click();
+    await wait(600);
+    return (!!await p.$('.duel-verdict-chip')) || 'no menu';
+  } },
+  'duel-female': { run: async p => duelWith(p, /Great Tusk/, 'Hatterene') },
+  'duel-none': { hash: hash([TEAM[0], TEAM[1], { ...TEAM[2], moves: ['Haze', 'Recover', 'Toxic Spikes', 'Protect'] }]), run: async p => duelWith(p, /Toxapex/, 'Gholdengo') },
+  // Analisi con altri team: Coverage tipi dell'Offesa coi tipi che nessuno colpisce (team di soli draghi), Recupero col
+  // recupero dimezzato di chi regge poco (Salamence e Dragonite con Roost)
+  'analysis-offense-types-lone': { ...offenseState(OFFENSE_SUBS.types), hash: hash(LONE) },
+  'analysis-defense-sustain-lone': defenseState(SUBS.sustain, { team: LONE }),
+  // Meta, la scheda di un Pokémon: il primo che nessuno regge o manda KO (team di soli draghi), il primo con un compagno
+  // fuori dai 40 (senza link)
+  'meta-nobody': { hash: hash(LONE), run: async p => metaCardWith(p, '.mvs-none') },
+  'meta-mate-off': { hash: hash(SIX), run: async p => metaCardWith(p, '.meta-mate-off') },
+  // Coaching di un team debole (due membri): minacce del meta scoperte da tutti e due i lati, le pillole col Pokémon
+  'coaching-threats': { hash: hash([STRESS[3], STRESS[2]]), run: async p => {
+    if (!await coachingReady(p)) return 'no coaching';
+    return (!!await p.$('.coach-prob-text.is-threat')) || 'no threat problem';
+  } },
+  // Coaching: il piano intero applicato (l'avviso con Annulla del piano)
+  'coaching-plan': { hash: hash(LONG), run: async p => {
+    if (!await coachingReady(p)) return 'no coaching';
+    if (!await clickText(p, '.coach-plan-apply', /./)) return 'no plan';
+    await wait(800);
+    return (!!await p.$('.undo-toast.is-plan')) || 'no plan toast';
+  } },
+};
+/** Il calcolo del worker di quel tipo non parte mai (es. 'improve', 'duelTips'): la finestra resta su "sto calcolando". */
+const holdWorker = (p: Page, kind: string) => p.evaluate(`(() => { const post = Worker.prototype.postMessage; Worker.prototype.postMessage = function (m, ...rest) { if (m && m.kind === '${kind}') return; return post.call(this, m, ...rest); }; })()`);
+/** Meta: apre una carta dopo l'altra finché nella scheda compare `selector` (sul telefono e sul tablet la scheda sale sopra). */
+async function metaCardWith(p: Page, selector: string): Promise<boolean | string> {
+  await tab(p, 'meta');
+  await wait(800);
+  const count = (await p.$$('.meta-card')).length;
+  for (let i = 0; i < count; i++) {
+    if (await p.$(selector)) return true;
+    await p.evaluate(n => { document.querySelectorAll<HTMLElement>('.meta-card')[n]?.click(); }, i);
+    await wait(250);
+    if (await p.$(selector)) return true;
+    // Telefono e tablet: la scheda è un foglio, si chiude prima della carta dopo
+    if (await p.$('.meta-tab.sheet-open')) { await p.keyboard.press('Escape'); await wait(400); }
+  }
+  return `no ${selector}`;
+}
+/** Editor del membro, scheda Sfida, l'avversario scelto per nome. */
+async function duelWith(p: Page, who: RegExp, opp: string): Promise<boolean | string> {
+  if (!await editorOf(p, who)) return 'no card';
+  await editorTab(p, /^(Sfida|Matchup)$/);
+  const input = await p.$('.slot.open .duel-species input');
+  if (!input) return 'no duel';
+  await input.click({ count: 3 });
+  await input.type(opp);
+  await wait(600);
+  const picked = await p.evaluate((name: string) => {
+    const option = [...document.querySelectorAll<HTMLElement>('.slot.open .duel-species [role="option"]')].find(o => (o.textContent ?? '').includes(name));
+    option?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    option?.click();
+    return !!option;
+  }, opp);
+  await wait(1200);
+  return picked || 'no option';
+}
+/** Analisi › Coaching coi consigli pronti. */
+async function coachingReady(p: Page): Promise<boolean> {
+  await tab(p, 'analysis');
+  await wait(300);
+  if (!await clickText(p, '#analysis-view-coaching', /./)) return false;
+  await p.waitForSelector('.coach-diag-list:not([aria-busy]), .coach-empty', { timeout: 20000 });
+  await wait(300);
+  return true;
+}
+/** Editor del primo membro, un altro set dal menu Set: il voto cambia mentre l'editor è aperto. */
+async function changeSet(p: Page): Promise<boolean | string> {
+  for (const name of [/Iron Valiant/, /Kingambit/, /Great Tusk/]) {
+    if (!await editorOf(p, name)) return 'no card';
+    if (!await clickText(p, '.slot.open .set-menu-button', /./)) return 'no set button';
+    await wait(300);
+    const rows = await p.$$('.slot.open .set-menu-row:not(.current)');
+    if (!rows.length) return 'no other set';
+    await rows[rows.length - 1].click();
+    await wait(1500);
+    if (await p.$('.grade-delta')) return true;
+  }
+  return 'grade did not change';
+}
+Object.assign(STATES, RARE_STATES);
 // Il controllo del testo (--scan) come stringa: dentro page.evaluate niente funzioni con nome (tsx aggiunge __name)
 const SCAN_TEXT = `(() => {
   const parse = s => { const n = (s.match(/[\\d.]+/g) || []).map(Number); if (s.startsWith('color(')) return [n[0] * 255, n[1] * 255, n[2] * 255, n.length > 3 ? n[3] : 1]; return [n[0], n[1], n[2], n.length > 3 ? n[3] : 1]; };

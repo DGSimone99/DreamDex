@@ -1,7 +1,3 @@
-/* Area senza peso nel voto (Velocità nello stall): etichetta e barra attenuate */
-.rating .bars .inactive dt { color: var(--faint); }
-.rating .bars .inactive dd { opacity: 0.5; }
-
 .analysis table { border-collapse: collapse; width: 100%; font-size: var(--fs-small); }
 .analysis th, .analysis td { padding: var(--sp-2) 3px; text-align: center; border-bottom: 1px solid var(--line-soft); }
 .analysis thead th { max-width: 72px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); }
@@ -9,11 +5,6 @@
 .analysis tr.serious { background: var(--bad-bg); }
 .analysis tr.minor { background: color-mix(in srgb, var(--accent) 18%, transparent); }
 
-/* Avvisi: triangolo rosso per i gravi, blu per i minori */
-.issue { display: inline-flex; align-items: center; gap: 3px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.issue .icon { width: 15px; height: 15px; }
-.issue.serious { color: var(--bad); }
-.issue.minor { color: var(--accent); }
 /* Nella tabella difensiva il colore sta sulle caselle: rosso le debolezze, verde resistenze e immunità */
 .analysis td.weak { color: var(--bad); font-weight: 600; }
 .analysis td.resist { color: var(--good); }
@@ -26,11 +17,16 @@
 .count-resist { color: var(--good); font-weight: 600; }
 
 /* Schede interne di Analisi: Panoramica e le aree del voto, col "?" accanto a quella aperta */
-.analysis-tabs { position: relative; display: flex; align-items: center; margin: 0 0 var(--sp-6); border-bottom: 1px solid var(--line-soft); }
-.analysis-tabs [role='tablist'] { display: flex; gap: var(--sp-1); }
-.analysis-tabs [role='tab'] { padding: var(--sp-4) var(--sp-8) 9px; border: 0; border-bottom: 3px solid transparent; border-radius: 0; background: none; font: 600 var(--fs-body)/1 var(--display); font-style: italic; color: var(--muted); }
+
+/* Schede interne a larghezza uguale su tutta la riga; quella aperta come la carta scelta nell'editor: chiara, col filo
+   magenta sotto e la punta che scende verso il contenuto */
+.analysis-tabs { position: relative; display: flex; align-items: center; margin: 0 0 var(--sp-6); border-bottom: 0; }
+.analysis-tabs [role='tablist'] { grid-template-columns: repeat(2, minmax(0, 1fr)) 14px repeat(4, minmax(0, 1fr)); }
+.analysis-tabs [role='tab'] { border-bottom: 3px solid transparent; border-radius: 0; font: 600 var(--fs-body)/1 var(--display); font-style: italic; color: var(--muted); }
 .analysis-tabs [role='tab']:hover { color: var(--text); background: color-mix(in srgb, var(--raised) 55%, transparent); }
-.analysis-tabs [role='tab'][aria-selected='true'] { color: var(--text); border-bottom-color: var(--accent); }
+.analysis-tabs [role='tab'][aria-selected='true'] {
+  border-bottom-color: var(--accent);
+}
 .analysis-view { flex: 1; min-height: 0; }
 
 /* Un'area sulla pagina: la testata (voto, problemi, sottoschede e "?") attaccata sopra il pannello, che scorre dentro */
@@ -188,13 +184,9 @@
 .analysis-tabs [role='tab'][aria-disabled='true'] { opacity: 0.45; cursor: not-allowed; }
 /* Icona e nome corto: solo nella barra a icone del telefono (phone-analysis.css) */
 .analysis-tabs :is(.tab-icon, .tab-short) { display: none; }
-
-/* Schede interne a larghezza uguale su tutta la riga; quella aperta come la carta scelta nell'editor: chiara, col filo
-   magenta sotto e la punta che scende verso il contenuto */
-.analysis-tabs { border-bottom: 0; }
 /* Panoramica e Coaching (la lettura del team) separate dalle aree del voto da uno stacco con un filo sottile */
 /* Sei schede: due di lettura e quattro aree (Offesa, Difesa, Velocità, Ruoli e Bonus) che riempiono tutta la riga */
-.analysis-tabs [role='tablist'] { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)) 14px repeat(4, minmax(0, 1fr)); gap: var(--sp-2); width: 100%; }
+.analysis-tabs [role='tablist'] { display: grid; gap: var(--sp-2); width: 100%; }
 .analysis-tabs [role='tablist']::before { content: ''; grid-column: 3; grid-row: 1; justify-self: center; width: 1px; margin: var(--sp-3) 0; background: var(--line); }
 .analysis-tabs [role='tab'] { display: flex; align-items: baseline; justify-content: center; gap: var(--sp-4); width: 100%; padding: var(--sp-4) var(--sp-7); border: 1px solid var(--line-soft); background: var(--panel); }
 .analysis-tabs [role='tab'][aria-selected='true'] {
@@ -226,7 +218,6 @@
 }
 .area-inactive { margin: 0; font-size: var(--fs-caption); color: var(--faint); }
 @media (prefers-reduced-motion: reduce) {
-  .tabs.vertical [role='tab'][aria-selected='true'] { animation: none; }
   .analysis-tabs [role='tab'], .tabs.vertical [role='tab'] { transition: none; }
 }
 
@@ -246,7 +237,7 @@
 }
 .dash.tight { --sum-row-min: 24px; }
 .dash.roomy { --sum-row-min: 34px; }
-.dash-summary { grid-column: 1; grid-row: 1 / -1; }
+.dash-summary { grid-column: 1; grid-row: 1 / -1; --sum-small: 34px; --sum-mini: 34px; --sum-line: 36px; --sum-arch: var(--fs-headline-l); position: relative; }
 .dash-coverage { grid-column: 2 / -1; grid-row: 1; }
 .dash-roles { grid-column: 2; }
 .dash-speed { grid-column: 3; }
@@ -267,10 +258,9 @@
 .dash-meta-hint { cursor: help; }
 .dash-links { flex: none; display: flex; gap: var(--sp-1); margin-left: auto; }
 /* Tutti i link delle testate (col testo o la sola freccia) e "Vai al Coaching": alti 20px con la stessa freccia SVG da 14px */
-.dash-link { box-sizing: border-box; height: 20px; gap: var(--sp-1); padding: 0 var(--sp-3); font-size: var(--fs-caption); font-weight: 600; line-height: 20px; color: var(--accent-ink); background: none; border-color: transparent; }
 /* Al passaggio: una luce azzurra sfumata senza bordi (come le righe del Riassunto), il testo si accende con un alone
    leggero e la freccia scivola di 2px verso destra */
-.dash-link { position: relative; isolation: isolate; }
+.dash-link { box-sizing: border-box; height: 20px; gap: var(--sp-1); padding: 0 var(--sp-3); font-size: var(--fs-caption); font-weight: 600; line-height: 20px; color: var(--accent-ink); background: none; border-color: transparent; position: relative; isolation: isolate; }
 /* Col mouse: link della testata, interruttore Tipi | Meta e "?" piccoli da vedere ma da 24px da cliccare (zona invisibile);
    col dito la zona sale a 44 (phone-analysis.css) */
 .dash-head .dash-link::after, .dash-tabs [role='tab']::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 24px; translate: 0 -50%; }
@@ -413,8 +403,7 @@
 .dash-role-grid { width: 100%; height: min(100%, calc(64px + var(--seps, 2) * 34px + var(--rows, 8) * 36px)); border-collapse: collapse; font-size: var(--fs-small); }
 .dash-role-grid thead th { padding: 0 0 var(--sp-1); font-weight: 400; text-align: center; vertical-align: bottom; }
 /* Lo sprite si stringe con la sua colonna: le sei colonne stanno sempre tutte */
-.dash-role-grid thead .sprite { filter: drop-shadow(0 0 1px color-mix(in srgb, var(--text) 45%, transparent)); }
-.dash-role-grid thead .sprite { display: block; margin: 0 auto; width: 100%; max-width: 50px; height: auto; aspect-ratio: 1; image-rendering: pixelated; }
+.dash-role-grid thead .sprite { filter: drop-shadow(0 0 1px color-mix(in srgb, var(--text) 45%, transparent)); display: block; margin: 0 auto; width: 100%; max-width: 50px; height: auto; aspect-ratio: 1; image-rendering: pixelated; }
 .dash-role-sep th { height: 22px; padding: var(--sp-4) 0 0; vertical-align: bottom; font-weight: 400; }
 .dash-role-row th, .dash-role-row td { height: 24px; padding: 0; border-bottom: 1px solid var(--line-soft); }
 .dash-role-row th { width: 1%; padding-right: var(--sp-4); text-align: left; font-weight: 500; white-space: nowrap; color: var(--text); }
@@ -465,7 +454,6 @@
  * delle righe), --sum-line (altezza minima di una riga). Ricca (team ridotto): sprite più grandi; le Sinergie prendono
  * l'altezza che resta e le loro righe crescono fino a un tetto, così sotto non resta un vuoto.
  */
-.dash-summary { --sum-small: 34px; --sum-mini: 34px; --sum-line: 36px; --sum-arch: var(--fs-headline-l); }
 .dash.tight .dash-summary { --sum-small: 30px; --sum-mini: 30px; --sum-line: 32px; --sum-arch: var(--fs-heading); }
 /* Cruscotto basso (portatili): sezioni più vicine e il triangolo delle sinergie più basso, così il Riassunto ci sta */
 .dash.tight .sum-sec { padding-top: 5px; }
@@ -579,7 +567,7 @@
 .sum-line:hover .sum-plinth .sprite, .sum-syn:hover .sum-pair-mon .sprite, .sum-syn:hover .sum-tri-v .sprite { transform: translateY(-2px); }
 .sum-syn:hover .sum-tri-edges line { stroke: color-mix(in srgb, var(--good) 70%, white); }
 .sum-syn:hover .sum-tri-edges marker path { fill: color-mix(in srgb, var(--good) 70%, white); }
-.sum-tri-badge { transition: box-shadow 0.18s var(--ease); }
+.sum-tri-badge { transition: box-shadow 0.18s var(--ease); position: absolute; width: var(--tri-badge); height: var(--tri-badge); display: grid; place-items: center; transform: translate(-50%, -50%); background: var(--panel); border: 1.5px solid var(--good); border-radius: 50%; overflow: hidden; }
 .sum-syn:hover .sum-tri-badge { box-shadow: 0 0 0 2px color-mix(in srgb, var(--good) 35%, transparent), 0 0 8px color-mix(in srgb, var(--good) 55%, transparent); }
 @media (prefers-reduced-motion: reduce) { .sum-plinth .sprite, .sum-pair-mon .sprite, .sum-tri-v .sprite { transition: none; } }
 .sum-line .sum-plinth { width: var(--sum-small); }
@@ -679,7 +667,6 @@
 .sum-tri-v .sprite { position: relative; display: block; width: calc(var(--tri-w) * 0.345); height: auto; image-rendering: pixelated; }
 /* L'icona tonda del tipo riempie tutto il cerchio dentro l'anello verde (niente fondo che si vede attorno) */
 /* Il badge è l icona del tipo (misura --ti-*) più il bordo verde da 1,5px per lato: --tri-badge = icona + 3px */
-.sum-tri-badge { position: absolute; width: var(--tri-badge); height: var(--tri-badge); display: grid; place-items: center; transform: translate(-50%, -50%); background: var(--panel); border: 1.5px solid var(--good); border-radius: 50%; overflow: hidden; }
 .sum-tri-badge img { display: block; width: 100%; height: 100%; border-radius: 50%; }
 /* Ampia: l'etichetta sopra il nome dei tipi, come nel mockup; normale: sulla stessa riga, per stare più bassa */
 .sum-tri-row.roomy .sum-syn-head { display: flex; flex-direction: column; gap: var(--sp-1); }
@@ -687,8 +674,6 @@
    ai lati della card), con un tratto sopra e un gradiente scuro sempre visibile che sale dal bordo basso; al centro "+N"
    sopra due frecce verso il basso. Il clic riduce il team. La card tiene 12px in più sotto, così il fondo pieno sta sul
    margine e il gradiente sfuma solo il bordo dell'ultima riga. Al passaggio si accendono il tratto e le frecce */
-.dash-summary { position: relative; }
-.dash-summary:has(.sum-more-below) { padding-bottom: var(--sp-10); }
 .sum-syn-sec:has(.sum-more-below) { position: static; }
 .sum-more-below { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; height: 40px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 0; padding: 0 0 var(--sp-1); font: 700 var(--fs-caption)/1 var(--display); font-variant-numeric: tabular-nums; color: var(--accent-ink); background: linear-gradient(to top, var(--field) 0%, color-mix(in srgb, var(--panel) 92%, transparent) 40%, color-mix(in srgb, var(--panel) 0%, transparent) 100%); border: 0; border-top: 1px solid var(--line); border-radius: 0; cursor: pointer; }
 .sum-more-below .icon { width: 14px; height: 14px; margin-top: -2px; }
@@ -746,7 +731,8 @@
 .coaching.coach-cure { display: grid; grid-template-columns: clamp(300px, 22vw, 400px) minmax(0, 1fr); align-items: stretch; gap: var(--sp-6); padding-bottom: var(--sp-8); overflow: hidden auto; }
 
 /* La diagnosi: un pannello con la fascia del titolo, i problemi come righe-pulsante (filtrano la lista), le aree pulite in fondo */
-.coach-diag { display: flex; flex-direction: column; gap: var(--sp-3); min-height: 0; padding: var(--sp-5) var(--sp-4) var(--sp-4); background: var(--panel); }
+/* Il tenue sul lato chiaro della fascia del titolo ("3 cambi", "· 1 di 5"): più chiaro del tenue normale, almeno 4,5:1 */
+.coach-diag { display: flex; flex-direction: column; gap: var(--sp-3); min-height: 0; padding: var(--sp-5) var(--sp-4) var(--sp-4); background: var(--panel); --muted-on-band: color-mix(in srgb, var(--muted) 55%, var(--text)); }
 .coach-diag-top .help-button { width: 28px; height: 28px; }
 .coach-diag-top { flex: none; display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); }
 .coach-diag-head { position: relative; flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--sp-4); margin: 0; padding: 4px 24px 4px 9px;
@@ -767,11 +753,10 @@
 .coach-rank:hover { box-shadow: inset 0 0 0 1px var(--control-line); }
 /* La proposta aperta nella carta: anello ciano (selezione) */
 .coach-rank.is-open { box-shadow: inset 0 0 0 2px var(--accent); background: linear-gradient(90deg, color-mix(in srgb, var(--t1) 26%, var(--panel)), color-mix(in srgb, var(--accent) 8%, var(--panel)) 60%); }
-.coach-rank-mon { grid-row: 1 / span 2; display: flex; align-items: center; justify-content: center; height: 40px; border-radius: var(--alt-r-sm); background: color-mix(in srgb, var(--ground) 45%, transparent); }
+.coach-rank-mon { grid-row: 1 / span 2; display: flex; align-items: center; justify-content: center; height: 40px; border-radius: var(--alt-r-sm); background: color-mix(in srgb, var(--ground) 45%, transparent); position: relative; }
 .coach-rank-mon .mon-icon { margin: -6px; }
 /* Un cambio di Pokémon: chi entra un poco in alto a sinistra, chi esce piccolo e grigio nell'angolo in basso a destra (come
    una VS in miniatura); un posto libero: un quadratino tratteggiato. Le righe non crescono: tutto sta nella cella da 40 */
-.coach-rank-mon { position: relative; }
 .coach-rank-mon.is-swap > .mon-icon, .coach-rank-mon.is-add > .mon-icon { translate: -3px -4px; }
 .coach-rank-out { position: absolute; right: -4px; bottom: -3px; width: 22px; height: 17px; overflow: hidden; border-radius: 4px;
   background: color-mix(in srgb, var(--ground) 85%, transparent); box-shadow: inset 0 0 0 1px var(--line); }
@@ -797,10 +782,20 @@
 .coach-rank-pills { grid-row: 2; grid-column: 2 / 4; display: flex; align-items: center; gap: var(--sp-2); min-width: 0; overflow: hidden; }
 .coach-rank-pills .coach-pill { height: 20px; }
 /* Un problema risolto in piccolo: spunta verde, il soggetto (minaccia, tipo, ruolo) o il testo corto */
-.coach-pill { display: inline-flex; align-items: center; gap: var(--sp-2); min-width: 0; height: 22px; padding: 0 var(--sp-4) 0 var(--sp-3); border-radius: var(--alt-r-sm);
-  font: 600 var(--fs-caption)/1 var(--ui); color: var(--text); background: color-mix(in srgb, var(--good) 12%, var(--ground)); }
+.coach-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+  height: 22px;
+  padding: 0 var(--sp-4) 0 var(--sp-3);
+  border-radius: var(--alt-r-sm);
+  font: 600 var(--fs-caption)/1 var(--ui);
+  color: var(--text);
+  background: color-mix(in srgb, var(--good) 12%, var(--ground));
+  flex: none;
+}
 /* Una pillola non si stringe (mai tagliata a metà parola): se non sta, la riga la toglie e la conta nel "+N" (RankPills) */
-.coach-pill { flex: none; }
 .coach-pill > .icon { flex: none; width: 11px; height: 11px; color: var(--good); }
 .coach-pill-text { display: inline-flex; align-items: center; gap: var(--sp-2); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .coach-pill-text .mon-icon { margin: -10px -6px -8px -6px; }
@@ -859,8 +854,6 @@
 
 /* La colonna della cura: la fascia "La proposta migliore", la carta grande, poi la lista */
 .coach-hero-band { --muted-on-band: color-mix(in srgb, var(--muted) 55%, var(--text)); margin-bottom: calc(-1 * var(--sp-3)); }
-/* Il tenue sul lato chiaro della fascia del titolo ("3 cambi", "· 1 di 5"): più chiaro del tenue normale, almeno 4,5:1 */
-.coach-diag { --muted-on-band: color-mix(in srgb, var(--muted) 55%, var(--text)); }
 /* I tasti accanto al titolo ("Tutte le proposte ↓", "Torna alla migliore"): mai a capo né stretti */
 .coach-hero-acts { flex: none; display: flex; align-items: center; gap: var(--sp-3); }
 .coach-hero-acts .coach-back { flex: none; }
@@ -908,14 +901,12 @@
   background: linear-gradient(180deg, color-mix(in srgb, var(--wash, var(--t1)) 19%, var(--panel)) 0%, color-mix(in srgb, var(--wash, var(--t1)) 4%, var(--panel)) 85%); }
 .coach-vs::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; pointer-events: none;
   background: linear-gradient(90deg, color-mix(in srgb, var(--faint) 45%, transparent) 0 50%, var(--t1) 50%); opacity: 0.85; }
-.coach-vs-side { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; min-width: 0; padding: var(--vs-pad) var(--sp-6) calc(var(--vs-pad) + 3px); }
-.coach-vs-stage { position: relative; display: flex; justify-content: center; align-items: flex-end; height: calc(var(--in-x) * var(--art-k)); margin-bottom: var(--sp-3); }
+.coach-vs-side { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; min-width: 0; padding: var(--vs-pad) var(--sp-6) calc(var(--vs-pad) + 3px); container-type: inline-size; }
+.coach-vs-stage { position: relative; display: flex; justify-content: center; align-items: flex-end; height: calc(var(--in-x) * var(--art-k)); margin-bottom: var(--sp-3); --in-x: min(var(--in-w), 100cqi / var(--art-k)); --out-x: min(var(--out-w), 100cqi / var(--art-k)); }
 /* Di lato la fascia VS non sborda mai: ogni lato è un contenitore (la sua larghezza meno il margine interno, almeno 12 px
    dal bordo della carta) e la figura (sprite e pedana) prende al più quella larghezza; di solito resta la misura della
    fascia (--in-w, --out-w), si stringe solo dove il lato è stretto (tablet col team a sinistra, telefono a 360). In
    altezza gli sprite possono ancora uscire sopra la fascia */
-.coach-vs-side { container-type: inline-size; }
-.coach-vs-stage { --in-x: min(var(--in-w), 100cqi / var(--art-k)); --out-x: min(var(--out-w), 100cqi / var(--art-k)); }
 .coach-vs-stage .pedana-disc { --sprite-w: var(--in-x); bottom: -9px; width: calc(var(--in-x) + 8px); }
 .coach-art-in { position: relative; z-index: 1; flex: none; display: flex; }
 .coach-art-in .sprite { width: calc(var(--in-x) * var(--art-k)); height: calc(var(--in-x) * var(--art-k)); margin-inline: calc(var(--in-x) * (1 - var(--art-k)) / 2); image-rendering: pixelated;
@@ -1147,7 +1138,6 @@
 }
 /* Carte basse e un po' meno larghe (1280×620): Risolve | Set affiancati anche qui, così la parte che scorre resta corta */
 @container coaching (min-width: 900px) and (max-height: 500px) {
-  .coach-hero-facts { grid-template-columns: minmax(0, 1fr) minmax(300px, 1fr); column-gap: var(--sp-8); }
   .coach-hero-facts > .coach-set { grid-column: auto; }
   .coach-set-moves { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .coach-set-moves .mvp-tail { display: none; }
@@ -1171,7 +1161,7 @@
     .coach-plan:not(.is-compact) .coach-plan-steps { flex: 0 1 auto; flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; padding-block: 1px; }
     .coach-plan:not(.is-compact) .coach-plan-steps::-webkit-scrollbar { display: none; }
     .coach-plan:not(.is-compact) .coach-plan-steps > li { flex: none; }
-    .coach-plan:not(.is-compact) .coach-plan-path > span:not(.coach-grade-from):not(:last-child) { display: none; }
+    .coach-plan:not(.is-compact) .coach-plan-path > span:not(.coach-grade-from):not(:last-child),
     .coach-plan:not(.is-compact) .coach-plan-after { display: none; }
   }
 }
@@ -1200,8 +1190,7 @@
   .coach-rank { padding-block: var(--sp-2); }
   /* Il Piano su una riga: senza il posto dei passi e col voto di ora → quello finale (il posto e i voti di mezzo restano
      nel nome dei passi e della striscia) */
-  .coach-plan-who small { display: none; }
-  .coach-plan-path > span:not(.coach-grade-from):not(:last-child) { display: none; }
+  .coach-plan-who small, .coach-plan-path > span:not(.coach-grade-from):not(:last-child) { display: none; }
 }
 /* Carte basse e telefono: il Set compatto, così le quattro mosse si vedono tutte senza scorrere dentro la carta: strumento e
    abilità in una riga di testo ("Avanzi · Pressione", le etichette restano per i lettori di schermo), le mosse due per riga
@@ -1315,8 +1304,7 @@
   .coaching .coach-alt-tile { min-height: 44px; }
   .coaching :is(.coach-plan-step, .coach-plan-apply) { height: 44px; }
   .coaching .coach-pages .cm-step { width: 44px; height: 44px; }
-  .coaching .coach-rank-stuck { min-height: 44px; }
-  .coaching .coach-export { min-height: 44px; }
+  .coaching .coach-rank-stuck, .coaching .coach-export { min-height: 44px; }
 }
 
 /* L'interruttore dell'efficacia ("Solo superefficaci", Offesa e Difesa): in alto a sinistra nel pannello, sulla riga
@@ -1422,9 +1410,27 @@
 .cov-tiles > li { display: flex; min-width: 0; }
 /* Con minacce che non stanno: il "+N" in una colonna stretta in fondo */
 .cov-tiles.has-more { grid-template-columns: repeat(var(--n), minmax(0, 1fr)) var(--more-w); }
-.cov-tile { --k: var(--warn); position: relative; isolation: isolate; flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 2px;
-  padding: 0 var(--sp-2) var(--sp-3); border: 0; border-radius: var(--alt-r-sm); color: var(--text); font: inherit; cursor: pointer;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--k) 16%, var(--raised)), color-mix(in srgb, var(--raised) 60%, var(--panel))); transition: transform 0.15s var(--ease); }
+.cov-tile {
+  --k: var(--warn);
+  position: relative;
+  isolation: isolate;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  padding: 0 var(--sp-2) var(--sp-3);
+  border: 0;
+  border-radius: var(--alt-r-sm);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--k) 16%, var(--raised)), color-mix(in srgb, var(--raised) 60%, var(--panel)));
+  transition: transform 0.15s var(--ease);
+  container-type: inline-size;
+}
 .cov-tile.open { --k: var(--bad); }
 .cov-tile:hover { transform: translateY(-2px); background: linear-gradient(180deg, color-mix(in srgb, var(--k) 26%, var(--raised)), color-mix(in srgb, var(--raised) 70%, var(--panel))); }
 .cov-tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -1446,10 +1452,9 @@
 .dash.roomy .cov-name .pick-name { flex-wrap: wrap; row-gap: 1px; }
 .cov-sides { position: absolute; top: 5px; right: 6px; display: flex; gap: 2px; }
 /* Coperto: il verde pieno delle icone (come la spunta dei ruoli); il verde tenue resta solo alle caselle della griglia dei Tipi */
-.cov-side { display: inline-flex; color: var(--good); }
+.cov-side { display: inline-flex; color: var(--good); border-radius: 3px; }
 /* Non solo colore: il lato scoperto ha un fondo pieno rosso (una forma in più), quello coperto è tenue, quello con un
    solo check giallo senza fondo */
-.cov-side { border-radius: 3px; }
 .cov-side.ok { opacity: 0.55; }
 .cov-side.bad { color: var(--text); background: color-mix(in srgb, var(--bad) 70%, var(--panel)); }
 .cov-side.minor { color: var(--warn); }
@@ -1459,7 +1464,6 @@
 .cov-side .icon { width: 14px; height: 14px; }
 /* L'uso nel meta nell'angolo in alto a sinistra, libero dai segni e dallo sprite: solo dove c'è posto (non nelle misure
    strette né nelle piastrelle sotto gli 88 px), altrimenti resta nel tooltip */
-.cov-tile { container-type: inline-size; }
 .cov-pct { position: absolute; top: 5px; left: 6px; font: 600 var(--fs-caption)/14px var(--ui); font-variant-numeric: tabular-nums; color: var(--muted); }
 .dash.tight .cov-pct { display: none; }
 @container (max-width: 87px) { .cov-pct { display: none; } }

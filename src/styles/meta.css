@@ -39,9 +39,23 @@
 .meta-use i { flex: 1; height: 7px; background: var(--field); box-shadow: var(--slot-inset); overflow: hidden; }
 .meta-use i::before { content: ''; display: block; width: var(--w); height: 100%; background: linear-gradient(var(--slot-shine) 0 1px, transparent 1px), var(--accent); }
 /* "Tuo" sul bordo basso del palco, a sinistra */
-.meta-mine { position: absolute; z-index: 1; top: -22px; left: 8px; padding: 1px var(--sp-3); border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
-  border-radius: 3px; background: var(--ground); color: var(--accent-ink); font: 700 var(--fs-label)/1.3 var(--ui); letter-spacing: 0.03em; text-transform: uppercase; }
-.meta-mine { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.meta-mine {
+  position: absolute;
+  z-index: 1;
+  top: -22px;
+  left: 8px;
+  padding: 1px var(--sp-3);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+  border-radius: 3px;
+  background: var(--ground);
+  color: var(--accent-ink);
+  font: 700 var(--fs-label)/1.3 var(--ui);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 /* Podio: oro, argento, bronzo sulla targhetta della posizione e sulla cornice; restano al loro posto */
 .meta-card.medal-1 { --medal: #ffc93c; --on-medal: #2a1d00; }
 .meta-card.medal-2 { --medal: #cfd6e6; --on-medal: #161a26; }
@@ -60,13 +74,12 @@
 @media (max-width: 380px) { .meta-member { gap: var(--sp-2); padding-right: var(--sp-2); } .meta-member .sprite, .meta-member .sprite.missing { width: 32px; height: 32px; } }
 
 /* La scheda del Pokémon scelto: testa sul colore del primo tipo, poi strumento e abilità, mosse, compagni */
-.meta-profile { display: flex; flex-direction: column; gap: var(--sp-6); min-width: 0; padding: var(--sp-6) var(--sp-7) var(--sp-7); background: var(--band); border: 1px solid var(--line-soft); }
+.meta-profile { display: flex; flex-direction: column; gap: var(--sp-6); min-width: 0; padding: var(--sp-6) var(--sp-7) var(--sp-7); background: var(--band); border: 1px solid var(--line-soft); position: relative; }
 .meta-profile .meta-plate { align-self: flex-start; }
 /* Le parti non si schiacciano una sull'altra. Se non ci stanno (schermi bassi col team aperto) le ultime lasciano il posto
    al pulsante in fondo della Panoramica (MoreBelow, .sum-more-below in analysis.css) che riduce il team; il suo velo sfuma
    sul fondo della scheda (Band) e il posto sotto l'ultima parte è suo, così non copre niente */
 .meta-profile > * { flex-shrink: 0; }
-.meta-profile { position: relative; }
 .meta-profile:has(> .sum-more-below) { padding-bottom: 40px; }
 .meta-profile > .sum-more-below { background: linear-gradient(to top, var(--band) 0%, color-mix(in srgb, var(--band) 0%, transparent) 100%); }
 .meta-hero { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: var(--sp-5); align-items: center; padding: var(--sp-4);

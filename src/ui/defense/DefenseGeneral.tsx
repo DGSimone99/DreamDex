@@ -17,18 +17,16 @@ import { Sprite, typeColor } from '../Sprite';
 import { DefenseHitTip } from './DefenseTypes';
 import { ThreatHitTip } from './DefenseMeta';
 import { useRoving } from '../useRoving';
-import { FLIP_TABLES_QUERY, useMediaQuery, useStackedTables } from '../useMediaQuery';
+import { FLIP_TABLES_QUERY, useMediaQuery } from '../useMediaQuery';
 import { gradeFor } from '../../engine/rating';
 import { AnalysisSheet } from '../AnalysisSheet';
 import { CardsLegend } from '../CardsLegend';
 import { signTone, TIP_NEUTRAL, TipHead, TipRow, TipRows, TipSec } from '../TipHead';
 import { AreaHero } from '../AreaHero';
 import { PedanaCard } from '../PedanaCard';
-import { barRow } from '../analysisRows';
 
 /** Il colore di un valore (le barre della Velocità): buono da 80, medio da 50, scarso sotto. */
 export const tone = (value: number) => (value >= 80 ? 'good' : value >= 50 ? 'warn' : 'bad');
-
 
 /**
  * Il nome di una fonte di recupero o di perdita nella lingua scelta: mosse, abilità e strumenti coi nomi ufficiali
@@ -170,7 +168,6 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
   const teamName = t('odetail.gen.total');
   // Tutti i pezzi della tabella (barre, colpi peggiori, quanto porta) sono un posto solo nel giro del Tab, poi le frecce
   const nav = useRoving<HTMLTableElement>();
-  const narrow = useStackedTables();
   // Telefono e tablet: i membri come carte Pedana, come nell'Offesa (OffenseGeneral)
   const cards = useMediaQuery(FLIP_TABLES_QUERY);
   const [sheet, setSheet] = useState<number | null>(null);
@@ -195,9 +192,6 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
   })).map(x => ({ ...x, color: typeColor((battleSpecies(x.row.set)?.types[0] as string | undefined) ?? ''),
     tip: <ThreatHitTip row={x.row} name={members[i].species} hit={x.h ?? 'ko'} mult={x.row.mults?.[i]} koHit={x.row.hits?.[i]} /> }));
 
-
-  const typesAsk = <Ask label={t('hold.attackersTitle')} guide={openGuide} describe={typeStatText(attackerCols(ctx.formatId ?? DEFAULT_FORMAT.formatId, t), lang)}><TypeAttackers formatId={ctx.formatId ?? DEFAULT_FORMAT.formatId} /></Ask>;
-  const metaAsk = <Ask label={t('guide.off.targets.metaTitle', { n: metaSpecies.length })} guide={openGuide} describe={metaText(t('guide.off.targets.metaTitle', { n: metaSpecies.length }), metaSpecies)}><MetaTargets species={metaSpecies} icon="shield" /></Ask>;
   const share = (m: (typeof members)[number], i: number) => {
     const words = sustainWords(m.sustainParts);
     return <DefShare share={shares[i]} label={t('ddetail.shareTitle', { n: signed(shares[i].points) })} describe={describe(shares[i], words)}
@@ -265,45 +259,6 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
             </AnalysisSheet>
           );
         })()}
-      </div>
-    );
-  }
-
-  if (narrow) {
-    // Telefono e tablet piccolo, come l'Offesa: per ogni membro il nome e quanto porta in alto, sotto la barra Tipi e la
-    // barra Meta larghe quanto lo schermo; in fondo il team allo stesso modo
-    return (
-      <div className={`def-frame def-general og-stack${roomy ? ' roomy' : ''}`}>
-        <div className="ad-scroll">
-          <table ref={nav.ref} className="def-grid def-members og-stack-table" aria-label={`${t('area.defense')}: ${t('detail.tab.general')}`} onKeyDown={nav.onKeyDown} onFocus={nav.onFocus}>
-            <colgroup><col className="og-col-label" /><col /><col className="og-col-share" /></colgroup>
-            <thead>
-              <tr>
-                <th scope="col" colSpan={2} className="def-mon-h og-stack-head">
-                  <span className="og-stack-asks"><BarHead icon="shield" word={t('kob.headTypes')} />{typesAsk}{meta && <><BarHead icon="shield" word={t('kob.headMeta')} />{metaAsk}</>}</span>
-                </th>
-                <th scope="col" className="og-share-h">{t('area.defense')}</th>
-              </tr>
-            </thead>
-            {members.map((m, i) => (
-              <tbody key={`${m.species}-${i}`} className={`og-stack-mon${i % 2 === 0 ? ' og-alt' : ''}`}>
-                {i > 0 && <tr className="og-gap" aria-hidden="true"><td colSpan={3} /></tr>}
-                <tr className="og-mon-row">
-                  <th scope="rowgroup" colSpan={2}><MemberMon name={m.species} set={setOf(ctx.team, m.species)} stats>{quiet(i) ? <span className="role-note">· {t('ddetail.cards.attacker')}</span> : undefined}</MemberMon></th>
-                  <td>{share(m, i)}</td>
-                </tr>
-                {barRow(t('kob.headTypes'), <HoldBars targets={typeBars[i]} who={m.species} mon={m.species} of={ofTypes} onPick={pick('coverageTypes', 'dtypes', i)} pickPlace={t('detail.coverageTypes')} />, 'types')}
-                {meta && barRow(t('kob.headMeta'), <HoldBars targets={metaBars[i]} who={m.species} mon={m.species} of={ofMeta} onPick={pick('coverageMeta', 'dmeta', i)} pickPlace={t('detail.coverageMeta')} />, 'meta')}
-              </tbody>
-            ))}
-            <tbody className="og-stack-mon og-stack-team">
-              <tr className="og-gap" aria-hidden="true"><td colSpan={3} /></tr>
-              <tr className="og-mon-row"><th scope="rowgroup" colSpan={3}><span className="og-plate">{teamName}</span></th></tr>
-              {barRow(t('kob.headTypes'), <HoldBars targets={teamHolds(typeBars)} who={teamName} of={ofTypes} alarm />, 'types')}
-              {meta && barRow(t('kob.headMeta'), <HoldBars targets={teamHolds(metaBars)} who={teamName} of={ofMeta} alarm />, 'meta')}
-            </tbody>
-          </table>
-        </div>
       </div>
     );
   }

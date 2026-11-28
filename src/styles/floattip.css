@@ -35,9 +35,19 @@
 .ftip[popover] { inset: auto; margin: 0; padding: 0; overflow: visible; color: var(--text); }
 
 /* La testata unica (TipHead): righe su una sfumatura nel colore del tooltip (dal 30% al 6%), filo nello stesso colore */
-.tip-head { position: relative; min-height: 40px; padding: var(--sp-4) var(--sp-6) var(--sp-4) var(--sp-5);
+.tip-head {
+  position: relative;
+  min-height: 40px;
+  padding: var(--sp-4) var(--sp-6) var(--sp-4) var(--sp-5);
   background: var(--stripes), linear-gradient(90deg, color-mix(in srgb, var(--tc) 30%, transparent), color-mix(in srgb, var(--tc) 6%, transparent));
-  border-bottom: 1px solid color-mix(in srgb, var(--tc) 45%, var(--line)); }
+  border-bottom: 1px solid color-mix(in srgb, var(--tc) 45%, var(--line));
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "title value" "sub qual";
+  align-items: center;
+  align-content: center;
+  gap: 0 var(--sp-4);
+}
 /* Il "/totale" dopo un numero, uguale ovunque (tooltip e tabelle): piccolo, spento, sulla stessa linea */
 .kob-count-num > small { display: inline; font: 700 italic var(--tip-small)/1 var(--display); letter-spacing: 0; color: var(--faint); }
 /* Dove porta il clic sull'elemento (TipGo): piede Accent Ink sotto il filo, la freccia dei link */
@@ -49,8 +59,6 @@
 
 /* ===== Testata unica (TipHead): a sinistra l'icona (tipo, tondo col simbolo o la sprite), il titolo con sotto la riga
    facoltativa, a destra il valore (numero o badge, mai tutti e due) con sotto la parola piccola che lo spiega */
-.tip-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "title value" "sub qual";
-  align-items: center; align-content: center; gap: 0 var(--sp-4); }
 .tip-head.has-lead { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "lead title value" "lead sub qual"; }
 .tip-lead { grid-area: lead; position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; }
 .tip-ti { display: block; width: var(--ti-tip); height: var(--ti-tip); box-shadow: 0 0 10px color-mix(in srgb, var(--tc) 60%, transparent) !important; }
@@ -101,8 +109,7 @@
 .tip-sec > p { margin: 0; }
 .tip-sec-label { display: flex; align-items: center; gap: var(--sp-3); font: 700 var(--tip-small)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
 /* Le parti vecchie dentro una sezione: l'aria la dà la sezione */
-.tip-sec .kot-list, .tip-sec .thr-tip-why, .tip-sec .ftip-empty { padding: 0; }
-.tip-sec .kot-none { padding: 0; }
+.tip-sec .kot-list, .tip-sec .thr-tip-why, .tip-sec .ftip-empty, .tip-sec .kot-none { padding: 0; }
 /* Le righe di un elenco (TipRows/TipRow): icona, nome con la frase sotto, valore a destra */
 .tip-rows { display: flex; flex-direction: column; gap: var(--sp-3); margin: 0; padding: 0; list-style: none; }
 .tip-row { display: flex; align-items: center; gap: var(--sp-4); min-width: 0; }
@@ -233,18 +240,15 @@
 /* Le parti cambiate rispetto al set di prima: in azzurro, la mossa nuova con un bordo azzurro sottile e un punto */
 .mcard-kit span.is-changed, .mcard-kit span.is-changed em { color: var(--accent-ink); }
 /* La fascia: lo sprite vero, grande come nel tooltip, che esce un po' dal bordo alto */
-.detail-hero .detail-mon { align-self: end; }
-.detail-hero .detail-mon .sprite { display: block; width: 96px; height: 96px; margin: -22px 0 -14px -8px; }
+.detail-hero .detail-mon { align-self: end; justify-content: flex-start; z-index: 3; }
+.detail-hero .detail-mon .sprite { display: block; width: 96px; height: 96px; margin: -22px 0 -14px -8px; margin-left: -4px; }
 /* Lo sprite parte dal bordo sinistro della colonna (centrato sborderebbe e il dettaglio lo taglierebbe) e sporge solo a
    destra, nello spazio prima del nome; nella colonna da 64 px (tablet in orizzontale, schermi bassi) è da 80 */
-.detail-hero .detail-mon { justify-content: flex-start; }
-.detail-hero .detail-mon .sprite { margin-left: -4px; }
 @media (min-width: 1100px) and ((max-width: 1279px) or (max-height: 799px)) {
   .detail-hero .detail-mon .sprite { width: 80px; height: 80px; margin: -18px 0 -12px -4px; }
 }
 /* Lo sprite (fermo) sta sopra a tutto: se capita che sbordi esce dalla fascia invece di essere tagliato; chi esce in
    Sostituisci (fermo anche lui) può uscire dal suo spazio, ma sotto lo sprite */
-.detail-hero .detail-mon { z-index: 3; }
 aside.detail.compact .detail-hero.mcard-head { grid-template-columns: 64px minmax(0, 1fr) auto; }
 .detail.compact .detail-hero .detail-mon .sprite { width: 72px; height: 72px; margin: -14px 0 -10px -6px; }
 /* I ruoli del set in fondo alla carta (tooltip e dettaglio): una riga semplice, l'etichetta come quelle dei dati del set */
@@ -365,7 +369,7 @@ aside.detail.compact .detail-hero.mcard-head { grid-template-columns: 64px minma
 /* ===== Dettaglio dei candidati disegnato come la carta del tooltip (SuggestionDetail): la testata della carta (diagonale
    nei colori dei tipi, righe, ombra in basso) con sprite, nome, icone dei tipi e lastra dei ruoli, il voto a destra; il set
    con la stessa griglia, l'esagono e le pillole. Le misure sono quelle del dettaglio, più grandi del tooltip */
-.detail-hero.mcard-head { grid-template-columns: 96px minmax(0, 1fr) auto; grid-template-rows: auto; align-items: center; align-content: center; gap: var(--sp-3) var(--sp-7); min-height: 108px; padding: var(--sp-6) var(--sp-9) var(--sp-6) var(--sp-6); }
+.detail-hero.mcard-head { grid-template-rows: auto; align-items: center; align-content: center; gap: var(--sp-3) var(--sp-7); padding: var(--sp-6) var(--sp-9) var(--sp-6) var(--sp-6); min-height: 92px; padding-top: var(--sp-4); padding-bottom: var(--sp-4); grid-template-columns: 80px minmax(0, 1fr) auto; }
 .detail-hero.mcard-head .detail-id { gap: var(--sp-4); }
 .detail-hero.mcard-head .detail-id h3 { gap: var(--sp-4); font-style: italic; text-shadow: 0 2px 6px rgb(0 0 0 / 0.5); }
 .detail-types { display: inline-flex; flex: none; gap: var(--sp-2); }
@@ -374,12 +378,9 @@ aside.detail.compact .detail-hero.mcard-head { grid-template-columns: 64px minma
 .detail-hero.mcard-head .detail-score span { color: var(--text); }
 /* Il dettaglio sta nella colonna senza scorrere: testata ed esagono un po' più bassi; sugli schermi bassi niente esagono
    e le mosse su due colonne (le statistiche restano in un clic nella scheda) */
-.detail-hero.mcard-head { min-height: 92px; padding-top: var(--sp-4); padding-bottom: var(--sp-4); }
-.detail-hero.mcard-head { grid-template-columns: 80px minmax(0, 1fr) auto; }
 @media (min-width: 1100px) and ((max-width: 1279px) or (max-height: 799px)) {
 
-  .detail-hero.mcard-head { min-height: 72px; }
-  .detail-hero.mcard-head { grid-template-columns: 64px minmax(0, 1fr) auto; }
+  .detail-hero.mcard-head { min-height: 72px; grid-template-columns: 64px minmax(0, 1fr) auto; }
 }
 /* Sotto i 900px di altezza (1536x864): esagono e testata ancora un filo più bassi */
 @media (min-width: 1100px) and (max-height: 899px) and (min-height: 800px) {
@@ -388,8 +389,7 @@ aside.detail.compact .detail-hero.mcard-head { grid-template-columns: 64px minma
 }
 /* Schermi molto bassi (1366x657, 1280x620): sezioni più strette, il titolo del set dentro la sua riga */
 @media (min-width: 1100px) and (max-height: 699px) {
-  .detail-hero.mcard-head { min-height: 64px; padding-top: var(--sp-2); padding-bottom: var(--sp-2); }
-  .detail-hero.mcard-head { grid-template-columns: 56px minmax(0, 1fr) auto; }
+  .detail-hero.mcard-head { min-height: 64px; padding-top: var(--sp-2); padding-bottom: var(--sp-2); grid-template-columns: 56px minmax(0, 1fr) auto; }
   .detail-hero.mcard-head .detail-id { gap: var(--sp-2); }
 }
 /* Schermi alti (1080 e oltre): c'è spazio, testata ed esagono grandi come nella carta e oltre */
@@ -400,14 +400,12 @@ aside.detail.compact .detail-hero.mcard-head { grid-template-columns: 64px minma
 /* Porta e Toglie a gruppi (BringGroups): etichetta col segno a sinistra (verde in Porta, rosso in Toglie, giallo negli
    avvisi), le voci a destra; i ruoli come i riquadri della Panoramica, con la spunta o la × */
 .bring-groups { display: grid; gap: var(--sp-4); }
-.bring-group { display: grid; grid-template-columns: 78px minmax(0, 1fr); gap: var(--sp-4); align-items: start; }
-.bring-items { list-style: none; margin: 0; padding: 2px 0 0; display: grid; gap: var(--sp-1); font-size: var(--fs-small); line-height: 1.35; }
+.bring-group { display: grid; grid-template-columns: 78px minmax(0, 1fr); gap: var(--sp-4); align-items: baseline; }
+.bring-items { list-style: none; margin: 0; padding: 2px 0 0; display: grid; gap: var(--sp-1); font-size: var(--fs-small); line-height: 1.35; padding-top: 0; }
 .bring-none { margin: 0; font-size: var(--fs-small); color: var(--muted); }
 /* La lastra dei ruoli in testata su una riga sola: l'elenco intero nel tooltip */
 /* L'etichetta sulla stessa linea di base della prima riga delle voci (o della scritta dei riquadri dei ruoli): le due
    scritte hanno misure diverse, quindi si allineano le basi, non i centri; i segni restano centrati sulla scritta */
-.bring-group { align-items: baseline; }
-.bring-items { padding-top: 0; }
 
 /* ===== Mossa (MoveTip): le forme della scheda mossa di Pokémon Champions coi colori del sito. Testata DreamDex nel colore
    del tipo (icona, nome, la priorità come lastra inclinata); sotto, caselle separate: l'etichetta su una fascia tinta

@@ -11,7 +11,7 @@
 }
 /* Testata del team: a sinistra la targa con la guida, a destra le scorciatoie (Team salvati, Importa / Esporta, Svuota). Niente si sposta col numero
    di Pokémon: la targa cresce solo col proprio testo, le scorciatoie restano attaccate al bordo destro */
-.team-head { position: relative; z-index: 6; display: flex; align-items: center; gap: var(--sp-5); margin-bottom: var(--sp-6); }
+.team-head { position: relative; z-index: 6; display: flex; align-items: center; margin-bottom: var(--sp-6); }
 .fill-anchor { position: relative; display: flex; }
 /* La targa del team (stessa della fascia "Voto": righe, colore, taglio): la parola Team e le sei tacche della squadra */
 .team-plate {
@@ -42,7 +42,16 @@
 .plate-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--warn); }
 .team-guide-slot { display: flex; }
 /* Quanti sono: il numero grande e pieno, il /6 piccolo e spento; il numero entra con un piccolo scatto quando cambia */
-.team-head h2 { display: flex; align-items: baseline; gap: var(--sp-5); }
+.team-head h2 {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-5);
+  margin: 0;
+  font: 700 var(--fs-section)/1.2 var(--display);
+  font-style: italic;
+  color: var(--on-plate);
+  white-space: nowrap;
+}
 .team-count { font: 600 var(--fs-caption)/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: var(--muted); }
 .team-count b { display: inline-block; margin-right: 1px; font: 800 var(--fs-plate)/1 var(--display); font-style: italic; color: var(--on-plate); animation: count-in 0.25s var(--ease); }
 @keyframes count-in { from { transform: translateY(-4px); opacity: 0; } }
@@ -55,13 +64,6 @@
   background: var(--stripes), var(--plate);
   clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
 }
-.team-head h2 {
-  margin: 0;
-  font: 700 var(--fs-section)/1.2 var(--display);
-  font-style: italic;
-  color: var(--on-plate);
-  white-space: nowrap;
-}
 /* La guida: la linguetta più in vista della testata, sul fondo azzurro scuro con la scintilla ciano. Non magenta: il
    magenta resta all'azione migliore del momento (Aggiungi al team del primo candidato) e alla sezione aperta */
 .team-head .team-guide {
@@ -71,7 +73,6 @@
   background: var(--accent-soft);
   border: 0;
   border-radius: 0;
-  color: var(--text);
   font: 700 var(--fs-caption)/1 var(--display);
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -120,9 +121,9 @@
 /* Il taglio nasconderebbe l'anello del focus: lo si disegna dentro */
 .team-head .team-action:focus-visible, .team-quick .popover > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
 /* Le scorciatoie a destra; una riga sottile riempie lo spazio vuoto, come nelle testate dei menu del gioco */
-.team-quick { display: flex; flex: 1; align-items: center; justify-content: flex-end; gap: var(--sp-8); min-width: 0; }
+.team-quick { display: flex; flex: 1; align-items: center; justify-content: flex-end; min-width: 0; }
 /* Team salvati e Showdown come un'unica barra di schede: linguette attaccate, separate da 2px */
-.team-quick::before { content: ''; flex: 1; height: 1px; margin: 0 var(--sp-2); background: linear-gradient(90deg, transparent, var(--line)); }
+.team-quick::before { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--line)); }
 /* Menu aperto: sopra la freccia che riduce la squadra */
 .team-head:has(.popover[open]) { z-index: 8; }
 /* Esporta: una linguetta sola (stesso taglio e fondo delle altre) con due pulsanti, il testo e il link, separati da una
@@ -214,12 +215,12 @@
 @media (max-width: 599px), (hover: none) { .hint-bubble:not(.done) { display: none; } }
 /* Svuota: il cestino, più discreto delle altre linguette, si accende di rosso solo sotto il mouse; una barretta lo stacca
    da Importa ed Esporta (il gap della fila più la barretta) */
-.clear-wrap { position: relative; display: flex; align-items: center; padding-left: var(--sp-6); }
-.clear-wrap::before { content: ''; position: absolute; left: 0; top: 6px; bottom: 6px; width: 1px; background: var(--line); }
-.team-head .clear-team { width: 44px; padding: 0; justify-content: center; background-color: transparent; color: var(--faint); }
+.clear-wrap { position: relative; display: flex; align-items: center; }
+.clear-wrap::before { content: ''; position: absolute; left: 0; top: 6px; bottom: 6px; width: 1px; background: var(--line); display: none; }
+.team-head .clear-team { justify-content: center; background-color: transparent; padding: 0 18px; color: var(--muted); }
 /* Solo il cestino: il nome resta nel fumetto e per i lettori di schermo */
 .team-head .clear-team > .btn-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.team-head .clear-team:hover, .team-head .clear-team:focus-visible { background-color: var(--bad-bg); color: var(--bad); }
+.team-head .clear-team:hover, .team-head .clear-team:focus-visible { background-color: var(--bad-bg); }
 /* Menu della testata (Team salvati, Importa / Esporta) come il pannello di Completa team: fondo Ground, angoli 4px, ombra,
    apertura breve. Quello delle scorciatoie si apre allineato a destra, sotto il suo pulsante */
 .team-head .popover[open] > :not(summary) {
@@ -240,7 +241,7 @@
 .import-panel .apply .icon { width: 15px; height: 15px; color: var(--accent-ink); }
 .import-panel .apply:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 30%, var(--raised)); }
 @media (prefers-reduced-motion: reduce) { .team-head .popover[open] > :not(summary) { animation: none; } }
-.slots { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--sp-5); }
+.slots { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--sp-5); --tw-s: 45px; --tw-m: 55px; --tw-l: 58px; }
 .slot.filled { display: contents; }
 .slot > .slot-card, .slot.empty {
   position: relative;
@@ -264,6 +265,8 @@
   text-align: center;
   border: 1px solid var(--line-soft);
   transition: transform 0.3s var(--ease), box-shadow 0.2s;
+  view-transition-name: var(--vt);
+  view-transition-class: slot;
 }
 /* La luce parte dal bordo alto della carta (il riquadro dello sprite sta poco sotto; la carta taglia quel che sporge) e
    finisce sulla pedana, in fondo al riquadro dello sprite */
@@ -273,7 +276,7 @@
 .slot > .slot-card .sprite-wrap .pedana-disc { bottom: calc(min(100cqh, 100cqw, 176px) * 10 / 96 - 13px); z-index: 0; }
 .slot > .slot-card .sprite-wrap > .sprite { position: relative; z-index: 1; }
 .slot > .slot-card .sprite-wrap > .sprite-ani { z-index: 1; }
-.slot > .slot-card .sprite { filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.45)); }
+.slot > .slot-card .sprite { filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.45)); display: block; image-rendering: pixelated; transition: transform 0.35s var(--ease), opacity 0.18s ease-out; }
 /* Team ridotto: la riga in fondo della pillola (tipi, o magenta se aperta). La carta grande usa .pedana-stripe */
 .slot > .slot-card::after {
   content: '';
@@ -283,9 +286,12 @@
   bottom: 0;
   height: 3px;
   background: transparent;
+  /* Carta chiusa sotto il mouse: un assaggio dell'aperta, più leggero (sale 2px e non 4, ombra morbida, sprite a 1.05 e
+   fermo, niente GIF), così sotto il mouse e aperta non si confondono. Solo il team aperto: le carte compresse hanno il loro */
+  transition: filter 0.15s ease-out, height 0.15s ease-out;
 }
 .slot > .slot-card:hover { box-shadow: inset 0 0 0 1px var(--line); }
-.slot.open > .slot-card { transform: translateY(-4px); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4); }
+.slot.open > .slot-card { transform: translateY(-4px); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4); --open-scale: 1.12; }
 .band.collapsed .slot.open > .slot-card::after { background: var(--accent-2); }
 /* Carta aperta: la riga dei tipi in fondo diventa magenta ("sei qui"), una riga sola */
 .slot.open > .slot-card .pedana-stripe { background: var(--accent-2); opacity: 1; }
@@ -295,9 +301,6 @@
 @media (min-width: 1100px) {
   .band:not(.collapsed) .slot-pointer { position: absolute; z-index: 5; top: 100%; display: block; width: 20px; height: 10px; transform: translate(-50%, -100%); background: var(--accent-2); clip-path: polygon(50% 0, 100% 100%, 0 100%); pointer-events: none; }
 }
-/* Carta chiusa sotto il mouse: un assaggio dell'aperta, più leggero (sale 2px e non 4, ombra morbida, sprite a 1.05 e
-   fermo, niente GIF), così sotto il mouse e aperta non si confondono. Solo il team aperto: le carte compresse hanno il loro */
-.slot > .slot-card::after { transition: filter 0.15s ease-out, height 0.15s ease-out; }
 /* Solo con un mouse: sul telefono il tocco lascerebbe la carta "sotto il mouse" */
 @media (hover: hover) {
   .band:not(.collapsed) .slot.filled:not(.open) > .slot-card:hover {
@@ -321,17 +324,15 @@
 .slot > .slot-card > * { flex-shrink: 0; }
 /* Con l'avviso aperto il suo fumetto passa sopra sprite, nome e righe sotto */
 .slot > .slot-card .slot-alerts:has(.alert-mark:hover, .alert-mark:focus-visible) { z-index: 6; }
-.slot > .slot-card .sprite { display: block; image-rendering: pixelated; transition: transform 0.35s var(--ease), opacity 0.18s ease-out; }
 /* Card aperta: lo sprite cresce un poco e gioca l'animazione */
-.slot.open > .slot-card { --open-scale: 1.12; }
 .slot.open > .slot-card .sprite { transform-origin: 50% 92%; transform: scale(var(--open-scale)); }
 /* Statico e GIF si danno il cambio con una dissolvenza breve (Sprite: .covered e .ready) */
 .slot > .slot-card .sprite.covered { opacity: 0; }
-.slot > .slot-card .sprite-ani { opacity: 0; transition: opacity 0.18s ease-out; }
-.slot > .slot-card .sprite-ani.ready { opacity: 1; }
 .slot > .slot-card .sprite-ani {
-  position: absolute;
+  opacity: 0;
+  transition: opacity 0.18s ease-out;
   /* Appoggiato in basso e mai più alto di --fit (px dello sprite): le GIF alte si rimpiccioliscono per stare nella card */
+  position: absolute;
   left: 50%;
   bottom: 4px;
   max-width: none;
@@ -340,6 +341,7 @@
   transform-origin: 50% 100%;
   transform: translateX(-50%) scale(min(calc(var(--open-scale, 1.12) * var(--sprite-scale, 1)), calc(var(--fit, 999) / var(--ani-h, 96))));
 }
+.slot > .slot-card .sprite-ani.ready { opacity: 1; }
 /* Il nome va a capo solo agli spazi e ai trattini, mai a metà parola: se la parte più lunga non entra nella riga, il nome
    si rimpicciolisce (fino a 11px). --name-em = larghezza vera di quella parte scritta a 1px (misurata nel font, senza
    unità: TeamPanel); la riga è la carta (container) meno l'icona dello strumento e, se ci sono, i triangoli degli avvisi */
@@ -368,7 +370,6 @@
    fit   = la larghezza segue il nome, scritta più piccola nelle carte strette;
    icons = solo le icone dei tipi.
    Larghezze = nome più lungo del gruppo (Kanit 700 11px, maiuscolo) + 8px, per lingua. L'icona resta sempre quadrata */
-.slots { --tw-s: 45px; --tw-m: 55px; --tw-l: 58px; }
 :lang(it) .slots { --tw-s: 47px; --tw-m: 56px; --tw-l: 70px; }
 .slot-card .type-chip { --tc-h: 18px; }
 .slot-card .type-chip > i { width: var(--tc-h); }
@@ -453,7 +454,6 @@
 /* Candidato della lista sopra uno slot vuoto: come al passaggio del mouse */
 .slot.empty.drop-target { border-color: var(--accent); color: var(--text); background: color-mix(in srgb, var(--accent) 6%, transparent); }
 /* Passaggio alle card compatte e ritorno: ogni card scivola nella nuova forma, il resto della pagina scorre senza dissolversi */
-.slot > .slot-card { view-transition-name: var(--vt); view-transition-class: slot; }
 .drawer { view-transition-name: slot-drawer; }
 .tab-body { view-transition-name: page-body; }
 ::view-transition-group(*) { animation-duration: 0.32s; animation-timing-function: var(--ease); }
@@ -604,8 +604,7 @@
 .team-head .team-io .export-tab.copied > button::before { background-color: var(--good-bg); }
 /* Il cestino: lo stesso parallelogramma, l'icona più tenue; rosso solo sotto il mouse */
 .clear-wrap { padding-left: 0; }
-.clear-wrap::before { display: none; }
-.team-head .clear-team { width: auto; padding: 0 18px; color: var(--muted); }
+.team-head .clear-team { width: auto; }
 .team-head .clear-team:hover, .team-head .clear-team:focus-visible { color: var(--bad); background: none; }
 .team-head .clear-team:hover::before, .team-head .clear-team:focus-visible::before { background-color: var(--bad-bg); }
 /* Team salvati ora sta a sinistra: il suo menu si apre allineato a sinistra, sotto il pulsante */

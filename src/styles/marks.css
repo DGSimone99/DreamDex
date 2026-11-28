@@ -63,16 +63,14 @@
 /* Icone degli strumenti (24px, dal foglio di Showdown) */
 .item-icon { display: inline-block; flex: none; vertical-align: middle; background-repeat: no-repeat; image-rendering: pixelated; }
 .slot .held { display: flex; align-items: center; gap: var(--sp-2); max-width: 100%; min-width: 0; }
-.slot .ability { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-.slot .ability { font-size: var(--fs-small); color: var(--muted); margin-top: -2px; }
+.slot .ability { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; font-size: var(--fs-small); color: var(--muted); margin-top: -2px; }
 .combobox.has-leading input { padding-left: 32px; }
 .combobox-leading { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); display: flex; pointer-events: none; }
-.combobox .option-head { gap: var(--sp-4); }
-.combobox .option-head { justify-content: flex-start; }
+.combobox .option-head { gap: var(--sp-4); justify-content: flex-start; }
 .combobox .option-head .option-detail, .combobox .option-head > .move-meta { margin-left: auto; }
 
 /* Nomi dei Pokémon nei testi: grassetto con le icone del tipo davanti (due sovrapposte per i doppi tipi) */
-.mon-ref, .mon-name { display: inline; }
+.mon-ref, .mon-name { display: inline; white-space: nowrap; }
 .mon-ref .type-dot, .mon-name .type-dot { margin-right: var(--sp-2); vertical-align: -3px; }
 .mon-name .mon-icon { vertical-align: middle; }
 .mon-ref strong, .mon-name strong { font-weight: 700; color: var(--text); }
@@ -91,4 +89,3 @@ img.ti-sq { border-radius: 3px !important; background: var(--c); box-shadow: ins
 .type-dot img + img { margin-left: 0; }
 .type-dot img.ti-sq:not(:only-child):first-child { border-radius: 3px 0 0 3px !important; }
 .type-dot img.ti-sq:not(:only-child):last-child { border-radius: 0 3px 3px 0 !important; }
-.mon-ref, .mon-name { white-space: nowrap; }

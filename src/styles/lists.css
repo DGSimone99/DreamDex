@@ -5,20 +5,6 @@
 }
 /* Portate in cima (clic su una scheda o su Sostituisci): restano sotto la barra in alto, che è fissa */
 
-/* Blocchi come pannelli del riepilogo: il titolo è una linguetta inclinata, riassunto e freccia a destra */
-.block { border-radius: 0; }
-.block > summary > span:first-child {
-  flex: none;
-  max-width: 60%;
-  padding: 3px var(--sp-10) 3px var(--sp-5);
-  font: 700 var(--fs-section)/1.25 var(--display);
-  font-style: italic;
-  letter-spacing: 0.01em;
-  color: var(--on-plate);
-  background: var(--plate);
-  clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
-}
-.block > summary > span + span { flex: 1; }
 /* Analisi e Meta: due colonne che scorrono ognuna per conto suo; Liste: box e Pokédex a pagine, niente scorre */
 @media (min-width: 1100px) {
   #panel-analysis.active, #panel-meta.active, #panel-lists.active { overflow: hidden; }
@@ -102,12 +88,11 @@
 .band.collapsed .slot > .slot-card { min-height: 0; height: 48px; padding: 0 var(--sp-3) 0 var(--sp-2); flex-direction: row; align-items: center; justify-content: flex-start; gap: var(--sp-2); }
 /* Pillola: icona del box, nome e icona dello strumento; il membro aperto nell'editor ha il contorno ciano. Margini e spazi
    stretti: anche a 1280 px nomi come Great Tusk e Corviknight entrano interi */
-.band.collapsed .slot > .slot-card > .name-line { display: flex; flex-direction: row-reverse; justify-content: flex-end; align-items: center; gap: var(--sp-2); flex: 1; min-width: 0; margin: 0; }
+.band.collapsed .slot > .slot-card > .name-line { display: flex; flex-direction: row-reverse; justify-content: flex-end; align-items: center; gap: var(--sp-2); flex: 1; min-width: 0; margin: 0; container-type: inline-size; }
 /* Nomi lunghi: a capo solo agli spazi e dopo i trattini (mai a metà parola), al massimo due righe. Se la parte più
    lunga non entra, la scritta si rimpicciolisce quanto basta (fino a 11px; --name-em come nelle carte, la riga è la
    pillola meno l'icona dello strumento); se il nome intero verrebbe tagliato, TeamPanel mette il nome senza forma;
    i puntini solo per un nome ancora troppo lungo */
-.band.collapsed .slot > .slot-card > .name-line { container-type: inline-size; }
 .band.collapsed .slot .name-line .name { --name-fs: var(--fs-small); flex: 1; min-width: 0; font-size: min(var(--name-fs), max(11px, (100cqi - 24px) / var(--name-em, 5.6))); line-height: 14px; white-space: normal; overflow-wrap: normal; word-break: normal; overflow: hidden; }
 @media (max-width: 1320px) { .band.collapsed .slot .name-line .name { --name-fs: var(--fs-caption); } }
 /* Sotto i 1600 px (portatili) la pillola è stretta: l'icona dello strumento lascia il posto al nome (lo strumento è
@@ -118,9 +103,8 @@
 }
 /* Nella barra il problema lo dice il puntino: niente bordo colorato attorno alla pillola */
 .band.collapsed .slot.invalid > .slot-card, .band.collapsed .slot.warn > .slot-card { outline: none; }
-.band.collapsed .slot.open > .slot-card { outline: 2px solid var(--accent-2); outline-offset: -2px; }
+.band.collapsed .slot.open > .slot-card { outline: 2px solid var(--accent-2); outline-offset: -2px; transform: translateY(-2px); }
 .band.collapsed .slot > .slot-card > :not(.slot-toggle, .mini-icon, .remove, .name-line) { display: none; }
-.band.collapsed .slot.open > .slot-card { transform: translateY(-2px); }
 .band.collapsed .mini-icon { position: relative; flex: none; display: block; }
 .band.collapsed .mini-icon .mon-icon { display: block; }
 .mini-alert { position: absolute; left: -4px; top: 0; width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 0 2px var(--panel); }
@@ -144,13 +128,13 @@
 /* Set (con le mosse) in alto, la Sfida sotto */
 .set-editor .editor-side { grid-template-rows: auto auto; align-content: space-between; }
 .editor-actions .editor-close { width: 36px; padding: 0; justify-content: center; }
-.editor-actions .editor-close:hover { border-color: var(--bad); color: var(--bad); }
+.editor-actions .editor-close:hover { border-color: var(--accent); color: var(--accent); }
 /* L'elenco degli spread si apre sotto la targhetta Spread */
 /* Carta aperta: lo sprite animato, grande quanto la carta, e sotto il nome (si vede quale membro è aperto); abilità,
    tipi e ruolo sono nell'editor */
 .slot.open > .slot-card { justify-content: center; --open-scale: 1.5; --fit: 180; }
 .slot.open > .slot-card > :not(.slot-toggle, .sprite-wrap, .name-line, .favorite, .remove, .slot-custom, .mini-icon, .pedana-stripe, .pedana-beam) { display: none; }
-.band:not(.collapsed) .slot.open > .slot-card .sprite-wrap { flex: 1; display: grid; place-items: end center; width: 100%; }
+.band:not(.collapsed) .slot.open > .slot-card .sprite-wrap { flex: 1; display: grid; place-items: end center; width: 100%; animation: open-grow 0.35s var(--ease); }
 /* Statico e animato con la stessa scala, quanto lo spazio della carta: la GIF è il riquadro di 96px ritagliato sul Pokémon,
    quindi alta --ani-h/96 dello statico. Senza GIF (es. Urshifu Pluricolpo) lo statico resta grande uguale, non di più */
 .band:not(.collapsed) .slot.open > .slot-card .sprite { width: min(100cqh, 100cqw); height: min(100cqh, 100cqw); transform: none; }
@@ -163,22 +147,20 @@
 .band.collapsed .slot.open .mini-icon .mon-icon { animation: box-hop 0.7s ease-in-out infinite; }
 /* Testata dell'editor: nome, tipi e shiny; a destra Set, Copia il set e Chiudi */
 .set-editor .editor-top .member-replace { height: 32px; white-space: nowrap; }
-.set-editor .editor-head { align-items: flex-end; row-gap: var(--sp-5); }
+/* Riquadro Ruoli basso: una riga di etichette compatte */
+.set-editor .editor-head { align-items: flex-end; row-gap: var(--sp-4); }
 /* Apertura della carta: lo sprite cresce fino alla misura grande, come quando torna piccolo */
 @keyframes open-grow { from { transform: scale(0.72); opacity: 0.6; } }
-.band:not(.collapsed) .slot.open > .slot-card .sprite-wrap { animation: open-grow 0.35s var(--ease); }
 /* Nome nell'editor: grande in corsivo, cliccabile per il soprannome; con un soprannome la specie sta sopra come piccola etichetta */
 .drawer { padding-top: 24px; padding-bottom: var(--sp-6); }
 .editor-title { position: relative; gap: var(--sp-4); }
-.editor-title .nickname { height: auto; padding: 0; border: 0; background: none; color: var(--text); cursor: text; min-width: 0; max-width: 100%; }
+.editor-title .nickname { height: auto; padding: 0; border: 0; background: none; color: var(--text); cursor: text; min-width: 0; max-width: 100%; position: relative; display: inline-flex; align-items: center; }
 /* Un soprannome lunghissimo (da un import) si taglia con i puntini invece di spingere fuori i pulsanti */
-.editor-title .nickname strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; padding: 0.2em 0.15em 0.25em 0; margin: -0.2em -0.15em -0.25em 0; }
-.editor-title .nickname strong { font: 800 var(--fs-display)/1 var(--display); font-style: italic; letter-spacing: 0.01em; }
+.editor-title .nickname strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; padding: 0.2em 0.15em 0.25em 0; margin: -0.2em -0.15em -0.25em 0; font: 800 var(--fs-display)/1 var(--display); font-style: italic; letter-spacing: 0.01em; }
 .editor-title .nickname strong::before { content: attr(data-name); }
 .editor-title .nickname:hover strong, .editor-title .nickname:focus-visible strong { text-decoration: underline dotted var(--faint); text-underline-offset: 4px; }
 /* La matita del soprannome solo al tocco (tenue, in alto a destra del nome, senza occupare spazio); col mouse basta la
    sottolineatura a puntini del nome: i tipi restano vicini al nome */
-.editor-title .nickname { position: relative; display: inline-flex; align-items: center; }
 .nickname-pencil { display: none; position: absolute; left: calc(100% + 1px); top: -4px; place-items: center; pointer-events: none; }
 .nickname-pencil .icon { width: 15px; height: 15px; }
 @media (hover: none) { .nickname-pencil { display: grid; opacity: 0.6; color: var(--muted); } }
@@ -196,7 +178,7 @@
 }
 .nickname-input { width: 200px; height: 32px; font: 800 var(--fs-title-l)/1 var(--display); font-style: italic; }
 .shiny-toggle { width: 32px; height: 32px; padding: 0; display: grid; place-items: center; color: var(--faint); }
-.shiny-toggle[aria-pressed='true'] { color: var(--warn); border-color: var(--warn); background: var(--warn-bg); }
+.shiny-toggle[aria-pressed='true'] { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
 /* Statistiche un po' più basse: righe e campi più stretti, senza schiacciare i cursori */
 .stat-row { padding-top: 4.5px; padding-bottom: 4.5px; }
 .set-editor .stat-rows { gap: 7px; }
@@ -224,8 +206,6 @@
 .editor-roles li { flex: none; display: inline-flex; align-items: center; height: 24px; padding: 0 var(--sp-9) 0 var(--sp-5); font: 500 var(--fs-caption)/1 var(--display); white-space: nowrap; color: var(--muted);
   background: color-mix(in srgb, var(--raised) 70%, transparent); border-radius: 7px 0 0 2px; clip-path: polygon(0 0, 100% 0, calc(100% - 9px) 100%, 0 100%); }
 .editor-roles li.main-role { color: var(--text); font-weight: 700; }
-/* Riquadro Ruoli basso: una riga di etichette compatte */
-.set-editor .editor-head { row-gap: var(--sp-4); }
 /* Schermi alti meno di 900px (1536×864 e simili): righe delle statistiche un pelo più strette */
 @media (min-width: 1100px) and (max-height: 899px) {
   .stat-row { padding-top: 3px; padding-bottom: 3px; }
@@ -248,17 +228,13 @@
 }
 /* Testate dentro l'editor: targhette neutre come tutti i titoli (--plate), il magenta resta a "sei qui" e "fai questo" */
 /* Colori in regola: shiny e chiudi nel ciano del lavoro; sovrascrivere è "da controllare" */
-.shiny-toggle[aria-pressed='true'] { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
-.editor-actions .editor-close:hover { border-color: var(--accent); color: var(--accent); }
 /* Voto vuoto: il messaggio a tutta larghezza, non spezzato in colonna */
-.grade-badge.none { display: flex; flex-direction: column; align-items: stretch; }
-.grade-badge.none .overall { font-size: var(--fs-title-l); }
-.grade-badge.none .label { text-wrap: balance; color: var(--muted); }
+.grade-badge.none { display: flex; flex-direction: column; align-items: stretch; --grade: var(--line); }
+.grade-badge.none .overall { font-size: var(--fs-title-l); margin-top: auto; }
+.grade-badge.none .label { text-wrap: balance; color: var(--muted); margin-bottom: auto; }
 /* Il disegno del voto è solo visivo (la frase per i lettori sta a parte): non cambia la griglia */
 .grade-badge .grade-visual { display: contents; }
 .grade-badge.none .overall, .grade-badge.none .label { text-align: center; align-self: center; }
-.grade-badge.none .overall { margin-top: auto; }
-.grade-badge.none .label { margin-bottom: auto; }
 
 /* Carta del voto: il colore della lettera (S magenta, la lettera speciale; A verde, B ciano, C giallo, D rosso; per il resto il magenta è solo per l'azione
    migliore e per "sei qui") tinge anche il fondo;
@@ -269,7 +245,6 @@
 .grade-badge.grade-B { --grade: var(--accent); }
 .grade-badge.grade-C { --grade: var(--warn); }
 .grade-badge.grade-D { --grade: var(--bad); }
-.grade-badge.none { --grade: var(--line); }
 /* Team non legale nel formato: lettera e giudizio grigi (il punteggio resta leggibile), finché non torna in regola */
 .grade-badge.rules-broken { --grade: var(--faint); }
 .grade-badge.rules-broken .overall { color: var(--muted); }
@@ -315,7 +290,6 @@
 /* Schermi grandi e alti (1920×1080 in su): carte più alte e sprite animato della carta aperta più grande */
 @media (min-width: 1600px) and (min-height: 1000px) {
   .slot > .slot-card, .slot.empty { min-height: 253px; }
-  .slot.open > .slot-card { --fit: 214; }
   /* Anche gli sprite delle carte chiuse un po' più grandi: le carte più alte non restano vuote */
   .slot > .slot-card .sprite { width: 136px; height: 136px; }
   .slot > .slot-card { --sprite-scale: 1.4167; }
@@ -359,11 +333,10 @@
   .band:not(.collapsed) .slot > .slot-card > .ability { display: none; }
   .slot .name-line { margin-top: var(--sp-1); }
   .grade-badge { row-gap: 0; padding-bottom: var(--sp-3); }
-  .grade-head { padding-top: 3px; padding-bottom: 3px; }
+  .grade-head { padding-top: 3px; padding-bottom: 3px; margin-bottom: var(--sp-3); }
   /* La fascia è più bassa (~23px): il "?" resta a metà */
   .grade-tools { top: 1.5px; }
   .team-plate { padding-top: 0; padding-bottom: 0; }
-  .grade-head { margin-bottom: var(--sp-3); }
   .grade-badge .letter { font-size: 46px; }
   .grade-badge .overall { font-size: var(--fs-title); }
   .grade-badge .label { font-size: var(--fs-caption); }
@@ -732,8 +705,7 @@
 .duel-label { grid-column: 1; grid-row: 2; display: flex; align-items: center; gap: var(--sp-4); min-width: 0; font: 600 12px/1.1 var(--display); }
 /* La pillola piccola con la coda della potenza della mossa */
 /* Il nome della mossa come nel Set: 14px (la pillola piccola lo regge) */
-.duel-label .duel-mvp { font-size: var(--fs-section); }
-.duel-label .duel-mvp { flex: 0 1 auto; min-width: 0; }
+.duel-label .duel-mvp { font-size: var(--fs-section); flex: 0 1 auto; min-width: 0; }
 .duel-none { font: 600 var(--fs-small)/1.1 var(--ui); color: var(--faint); }
 /* Gli interruttori dei potenziamenti: la casellina si spunta e la riga si ricalcola. Verde la danza, azzurro il team,
    rosso quello dell'avversario; acceso, il fondo si fa pieno del suo colore */
@@ -764,8 +736,7 @@
 /* La riga dei consigli: sempre presente in fondo alla Sfida (grigia senza consigli); ogni consiglio è un chip che apre la
    sua scheda. Etichetta nel ciano del lavoro (il magenta resta raro). Due righe indipendenti: sotto il tuo colpo attacco,
    mossa e Velocità; sotto il suo la difesa. */
-.duel-tips { grid-column: 1 / -1; grid-row: 4; min-width: 0; }
-.duel-tips { position: relative; display: flex; align-items: center; gap: var(--sp-3); overflow: hidden; white-space: nowrap; font: 500 12px/1.25 var(--ui); color: var(--text); }
+.duel-tips { grid-column: 1 / -1; grid-row: 4; min-width: 0; position: relative; display: flex; align-items: center; gap: var(--sp-3); overflow: hidden; white-space: nowrap; font: 500 12px/1.25 var(--ui); color: var(--text); }
 .duel-tips > b { flex: none; font-weight: 700; color: var(--accent-ink); }
 .duel-tips-none { min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--faint); }
 .duel-tips:has(.duel-tips-none) > b { color: var(--faint); }
@@ -889,10 +860,9 @@ html.touch-tips .duel-tip-count[aria-expanded='true'] { color: var(--accent-ink)
   .set-editor .editor-side.with-duel > .set-box { align-content: start; row-gap: var(--sp-6); padding-top: var(--sp-6); }
   .set-editor .editor-side.with-duel > .set-box > .editor-group { align-content: start; }
   .set-editor .editor-side.with-duel .editor-group.moves { row-gap: var(--sp-4); }
-  .set-editor .editor-side.with-duel > .editor-group.duel { justify-content: flex-start; }
-  .set-editor .editor-side.with-duel .duel-card { flex: 1 1 auto; }
   /* La Sfida prende l'altezza che resta nella colonna (non la impone): le sue righe si stringono a gradini */
-  .set-editor .editor-side.with-duel > .editor-group.duel { container: duel / size; }
+  .set-editor .editor-side.with-duel > .editor-group.duel { justify-content: flex-start; container: duel / size; }
+  .set-editor .editor-side.with-duel .duel-card { flex: 1 1 auto; }
 }
 /* Schermi bassi: la Sfida più fitta, così il cassetto non scorre */
 @media (min-width: 1100px) and (max-height: 700px) {

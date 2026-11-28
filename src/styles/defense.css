@@ -21,9 +21,25 @@
    meteo) */
 /* --def-legend: la riga sopra la tabella per la legenda (in alto a destra), tenuta in ogni scheda anche senza legenda,
    così la tabella parte alla stessa altezza ovunque */
-.def-frame { --def-top: 50px; --def-gap: 6px; --def-head: 44px; --def-sp: 3px; --def-tail: 4px; --def-legend: 20px; --def-mon: 270px; --def-row-min: 28px; --def-row-max: 999px;
+.def-frame {
+  --def-top: 50px;
+  --def-gap: 6px;
+  --def-head: 44px;
+  --def-sp: 3px;
+  --def-tail: 4px;
+  --def-legend: 20px;
+  --def-mon: 270px;
+  --def-row-min: 28px;
+  --def-row-max: 999px;
   --def-row: clamp(var(--def-row-min), calc((100cqh - var(--def-legend) - var(--def-top) - var(--def-gap) - var(--def-head) - var(--def-tail)) / 6 - var(--def-sp)), var(--def-row-max));
-  display: flex; flex-direction: column; height: 100%; min-height: 0; padding-top: var(--def-legend); container-type: size; }
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  padding-top: var(--def-legend);
+  container-type: size;
+  position: relative;
+}
 .def-frame.roomy { --def-tail: 4px; --def-mon: 270px; --def-row-min: 34px; --def-row-max: 999px; }
 .def-frame > .ad-scroll { flex: none; margin-bottom: var(--def-gap); overflow: visible; }
 /* La lista parte subito sotto la testata dell'area: meno margine in alto nel pannello */
@@ -71,7 +87,6 @@
 /* Righe di lettura non oltre ~70 caratteri (32em: in Kanit un carattere è circa mezzo em): oltre, l'occhio perde la riga dopo */
 .guide-rows dd { max-width: 32em; margin: 0; color: var(--muted); }
 .guide-rows dd .guide-sub { display: block; max-width: 32em; margin-top: 3px; font-size: var(--fs-small); color: var(--faint); }
-.guide-note { margin: 0 0 var(--sp-3); color: var(--muted); }
 @media (max-width: 560px) {
   .guide-rows > div { grid-template-columns: 1fr; gap: var(--sp-1); }
 }
@@ -81,29 +96,20 @@
 .def-frame thead tr.rob-grp { height: 16px; }
 .def-frame thead tr.rob-atk { height: calc(var(--def-head) - 16px - var(--def-sp)); }
 .rob-grp th { padding: 0 0 var(--sp-1); text-align: center; border-bottom: 2px solid var(--line); white-space: nowrap; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); }
-.rob-grp th.def-mon-h, .rob-grp .rob-side-h { border-bottom: 0; vertical-align: bottom; }
+.rob-grp th.def-mon-h { border-bottom: 0; vertical-align: bottom; }
 .rob-grp th:not(.def-mon-h) { line-height: 1; }
-.rob-grp .rob-side-h { text-align: center; overflow: visible; max-width: none; text-overflow: clip; }
 .rob-atk th { padding: 0; line-height: 0; text-align: center; vertical-align: bottom; }
 .def-frame .rob-atk .def-box { --bs: 0.8; }
-.rob-matrix .rob-col-side { width: 58px; }
-.rob-matrix .rob-col-gap { width: 6px; }
-.rob-gap { padding: 0; border: 0; }
 /* Caselle come la griglia di Coverage tipi: il colore dice la soglia, il testo il % del colpo */
 .def-frame .rob-cell { padding: 0; text-align: center; font: 700 clamp(12px, calc(var(--def-row) * 0.22), 20px)/1 var(--ui); border: 1px solid var(--line); border-radius: 3px; font-variant-numeric: tabular-nums; }
 .def-frame .rob-cell.hold-ohko { border-color: var(--bad); }
 .def-frame .rob-cell.hold-2 { border-color: color-mix(in srgb, var(--warn) 65%, transparent); }
 .def-frame .rob-cell.hold-3 { border-color: color-mix(in srgb, var(--good) 85%, transparent); }
 .def-frame .rob-cell.hold-4 { border-color: color-mix(in srgb, var(--good) 70%, transparent); }
-.rob-side { padding: 0; text-align: center; }
-.rob-side .ct-pill { min-width: 40px; font-size: var(--fs-small); }
 .ad-panel .rob-legend { display: flex; flex-wrap: wrap; align-items: center; gap: var(--legend-gap); margin: auto 0 0; padding-top: var(--sp-4); font-size: var(--legend-size); color: var(--legend-ink); }
 @container (max-width: 1100px) {
   .def-frame .rob-atk .def-box { --bs: 0.65; }
-  .rob-matrix .rob-col-side { width: 52px; }
-  .rob-grp .rob-side-h { font-size: var(--fs-label); letter-spacing: 0; }
   .def-frame .rob-cell { font-size: var(--fs-label); letter-spacing: -0.02em; }
-  .rob-side .ct-pill { min-width: 0; padding: 1px var(--sp-2); font-size: var(--fs-label); }
 }
 
 /* Recupero nella cornice comune: Perde (Stealth Rock e strumenti a parte), Recupera con le fonti, il Netto come barra
@@ -125,8 +131,7 @@
 .def-frame .sus-table thead tr.rob-grp { height: 26px; }
 .def-frame .sus-table thead tr.sus-sub { height: calc(var(--def-head) - 26px - var(--def-sp)); }
 .def-frame .sus-table thead .sus-sub th { padding-bottom: 2px; line-height: 1; }
-.sus-table thead .sus-sub th { padding-bottom: var(--sp-2); }
-.sus-table thead .sus-sub th { padding: 0 0 var(--sp-3); text-align: center; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); line-height: 1; }
+.sus-table thead .sus-sub th { padding-bottom: var(--sp-2); padding: 0 0 var(--sp-3); text-align: center; font: var(--col-head); text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--col-head-ink); line-height: 1; }
 .sus-table td { padding: 0 var(--sp-6); border-bottom: 1px solid var(--line-soft); }
 .sus-table td.sus-loss { text-align: center; padding: 0; }
 .sus-loss-cell { display: inline-flex; align-items: center; gap: var(--sp-2); }
@@ -206,7 +211,6 @@
 /* Tutte le legende delle tabelle allo stesso posto: in alto a destra, nella riga sopra la tabella (--def-legend), così si
    leggono prima dei dati. Una riga sola: a destra la chiave dei colori, prima (verso il centro) i conteggi di Coverage meta,
    le note del meteo di Coverage tipi della Difesa (tagliate coi puntini, testo intero nel title) o la nota del focus */
-.def-frame { position: relative; }
 .ad-panel .def-frame > .rob-legend { position: absolute; top: 0; left: 0; right: 0; height: var(--def-legend); margin: 0; padding: 0;
   display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-end; gap: var(--legend-gap); white-space: nowrap; line-height: 1.1; }
 .ad-panel .def-frame > .rob-legend > .area-legend { order: 2; }
@@ -215,8 +219,6 @@
 .ad-panel .cm-summary { display: inline-flex; align-items: center; gap: var(--sp-3); margin: 0 0 0 auto; }
 .cm-summary .ct-pill { font-size: var(--fs-caption); }
 .ct-pill.zero { background: var(--raised); color: var(--faint); }
-/* Peso di ogni parte nella Difesa, accanto al nome (guida, Come funziona) */
-.guide-pct { margin-left: var(--sp-4); padding: 0 var(--sp-3); border-radius: 3px; background: var(--accent-soft); color: var(--text); font-size: var(--fs-caption); font-weight: 700; font-variant-numeric: tabular-nums; }
 /* Guida a sezioni: le sezioni stanno una sopra l'altra nella stessa cella; si vede solo quella aperta */
 .guide-stack { display: grid; min-height: 0; overflow-y: auto; }
 .guide-stack > .help-panel { grid-area: 1 / 1; overflow: visible; }
@@ -238,17 +240,6 @@
 .guide-keys .bad b { color: var(--bad); }
 .guide-keys .even b { color: var(--muted); }
 .guide-keys li[title] { cursor: help; }
-.guide-example { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3) var(--sp-4); font-size: var(--fs-section); color: var(--muted); }
-.guide-example .guide-mults { flex-basis: 100%; }
-.guide-mults { display: inline-flex; gap: 3px; }
-.guide-mults i { display: inline-grid; place-items: center; min-width: 30px; height: 26px; border: 1px solid var(--line); border-radius: 3px; font: normal 700 var(--fs-caption)/1 var(--ui); color: var(--text); background: var(--raised); }
-.guide-mults .weak { background: color-mix(in srgb, var(--bad) 28%, var(--panel)); border-color: color-mix(in srgb, var(--bad) 80%, transparent); }
-.guide-arrow { color: var(--faint); }
-.guide-res { display: grid; gap: 1px; padding: 0 var(--sp-6) 0 0; margin-right: var(--sp-2); border-right: 1px solid var(--line-soft); }
-.guide-res small { font-size: var(--fs-label); font-weight: 600; text-transform: uppercase; letter-spacing: var(--col-head-track); color: var(--faint); }
-.guide-res b { color: var(--text); font-variant-numeric: tabular-nums; }
-.guide-verdict { display: inline-flex; align-items: center; gap: var(--sp-3); font-size: var(--fs-caption); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--bad); }
-.guide-verdict b.ct-pill { font-size: var(--fs-small); text-transform: none; letter-spacing: 0; }
 .guide-lines { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--sp-2); font-size: var(--fs-section); color: var(--muted); }
 .guide-lines li { max-width: 32em; }
 .guide-lines b { color: var(--text); }
@@ -262,10 +253,6 @@
 .help-dialog.area-guide { width: min(980px, 100%); height: min(620px, calc(100vh - 48px)); max-height: min(620px, calc(100vh - 48px)); }
 
 /* Guida, Robustezza: le quattro soglie come tasti, i pesi dei membri come barra a segmenti, la somma dei lati */
-.guide-holds { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-2); margin: 0; padding: 0; list-style: none; }
-.guide-holds li { display: grid; justify-items: center; gap: var(--sp-2); padding: var(--sp-4) var(--sp-2); border: 1px solid var(--line-soft); background: color-mix(in srgb, var(--raised) 55%, var(--panel)); }
-.guide-holds b { font: italic 700 var(--fs-title-l)/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
-.guide-holds small { font-size: var(--fs-caption); color: var(--muted); }
 .guide-weights { padding: var(--sp-4) var(--sp-5) var(--sp-3); border: 1px solid var(--line-soft); background: color-mix(in srgb, var(--raised) 35%, transparent); }
 .guide-weights h6 { margin: 0 0 var(--sp-4); font-size: var(--fs-label); font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: var(--col-head-track); }
 .guide-weights ol { display: flex; gap: 3px; margin: 0; padding: 0; list-style: none; }
@@ -280,13 +267,6 @@
 .guide-weights-axis { display: flex; justify-content: space-between; margin: var(--sp-2) 0 0; font-size: var(--fs-label); color: var(--faint); }
 .guide-weights-axis span:first-child::before { content: '← '; }
 .guide-weights-axis span:last-child::after { content: ' →'; }
-.help-panel .guide-sum, .guide-sum { max-width: none; display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); margin: var(--sp-8) 0 0; font-size: var(--fs-section); color: var(--faint); }
-.guide-sum span { padding: 3px var(--sp-5); border: 1px solid var(--line); border-radius: 3px; background: var(--raised); color: var(--muted); }
-.guide-sum span b { margin-right: var(--sp-2); color: var(--text); font-variant-numeric: tabular-nums; }
-.guide-sum span.out { border-color: var(--accent); background: var(--accent-soft); color: var(--text); font-weight: 600; }
-@media (max-width: 560px) {
-  .guide-holds { grid-template-columns: repeat(2, 1fr); }
-}
 /* Recupero in un pannello stretto (1280 a squadra chiusa, 1366 aperta): colonne più strette, il Netto resta leggibile */
 @container (max-width: 1100px) {
   .sus-table .sus-col-loss { width: 108px; }
@@ -305,9 +285,6 @@
 .guide-two .guide-keys { grid-auto-flow: row; grid-template-columns: repeat(3, 1fr); }
 .help-panel .guide-foot, .guide-foot { max-width: none; margin: var(--sp-3) 0 0; font-size: var(--fs-caption); color: var(--faint); }
 .guide-rows.compact > div { padding: 3px 0; }
-/* Guida, Coverage meta: le tre soglie di chi regge con le pastiglie della tabella, la profondità come barra a segmenti */
-.guide-holds.three { grid-template-columns: repeat(3, 1fr); }
-.guide-holds.three b { font: 600 var(--fs-section)/1.2 var(--ui); font-style: normal; }
 /* Il membro: nome e tipi sulla stessa riga, sotto PS, Difesa e Difesa Speciale finali coi simboli */
 .def-mon-text { display: grid; gap: 1px; min-width: 0; }
 .def-mon-line { display: flex; align-items: center; gap: var(--sp-3); min-width: 0; }
@@ -319,8 +296,6 @@
 .def-mon-stats .stat-icon { width: 12px; height: 12px; flex: none; color: var(--faint); }
 .def-mon-stats .up { color: var(--good); }
 .def-mon-stats .down { color: var(--bad); }
-/* Fisica e Speciale in testata col loro simbolo */
-.rob-side-h .icon { width: 15px; height: 15px; color: var(--muted); vertical-align: middle; }
 /* Righe troppo basse per due righe di testo (sotto ~35px, es. 1366 a squadra aperta): niente statistiche sotto il nome,
    così le righe restano alte quanto nelle altre schede. Soglia sull altezza della cornice (righe = (h − 202) / 6 − 3) */
 @container (max-height: 440px) { .def-frame .def-mon-stats { display: none; } }
@@ -338,7 +313,7 @@
    coi colori di Coverage tipi (verde e verde chiaro regge, giallo 2HKO, rosso KO) */
 .def-meta-grid .rob-cell { font-size: clamp(11px, calc(var(--def-row) * 0.2), 17px); line-height: 1.05; vertical-align: middle; }
 .def-meta-grid .rob-cell.hold-none { color: var(--muted); }
-.def-meta-grid .dm-h { padding: 0; line-height: 0; text-align: center; vertical-align: bottom; }
+.def-meta-grid .dm-h { padding: 0; text-align: center; vertical-align: bottom; line-height: 1; }
 .def-frame.def-meta-grid .dm-h .def-box { --bs: 1.2; }
 .def-meta-grid .ct-sum td { height: 24px; }
 
@@ -382,7 +357,6 @@
 .def-meta-grid .rob-cell.dm-cell.hold-ohko { background: color-mix(in srgb, var(--bad) 10%, var(--panel)); border-color: var(--bad); }
 .def-meta-grid .ct-table .eff-tag { top: 3px; bottom: auto; }
 @container (max-height: 330px) { .def-meta-grid .ct-table .eff-tag { top: auto; bottom: 2px; } }
-.def-meta-grid .dm-h { line-height: 1; }
 
 /* Generale della Difesa: Tipi e Meta sono barre a pezzi come nell'Offesa (HoldBars), con la stessa misura (riga, conto,
    regola dei pezzi: offense.css); la colonna Difesa resta una barra semplice */
